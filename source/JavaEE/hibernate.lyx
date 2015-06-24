@@ -1,0 +1,6853 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language serbian-latin
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Perzistencija objekata u Javi: Hibernate
+\end_layout
+
+\begin_layout Standard
+Tabelarno predstavljanje podataka u relacionom sistemu je fundamentalno
+ različito od mreže objekata koja se koristi u objektno orijentisanim Java
+ aplikacijama.
+ Hibernate je alat koji premošćava jaz između relacionih i objektno orijentisani
+h tehnologija, odnosno služi za objektno-relaciono preslikavanje (ORM, object-re
+lational mapping).
+ Hibernate taj zadatak obavlja na veoma praktičan, realističan i direktan
+ način.
+ 
+\end_layout
+
+\begin_layout Standard
+Prva verzija alata Hibernate pojavila se 2001 kada je njegov autor, Gevin
+ King, zaključio da postojeći alati nisu dorasli složenim šemama podataka
+ u aplikacijama.
+ Tada je Hibernate započeo svoj život kao nekomercijalni, open-source projekat.
+ Godine 2003 pridružio se porodici jboss.org i sada za njega postoji i komercijal
+na podrška, ali srećom po programere, i dalje je besplatan alat otvorenog
+ koda.
+ 
+\end_layout
+
+\begin_layout Section*
+Šta je perzistencija?
+\end_layout
+
+\begin_layout Standard
+Gotovo svim aplikacijama potrebno je perzistiranje podataka.
+ U Javi perzistencija obično podrazumeva čuvanje podataka u relacionoj bazi
+ podataka uz korišćenje SQL sintakse.
+ Relacione baze podataka su ušle u široku upotrebu zato što su veoma prilagodlji
+v i robustan način za upravljanje podacima.
+ Zbog kompletne i dosledne teorijske osnove relacionog modela, relacione
+ baze između ostalog efikasno garantuju i štite integritet podataka.
+\end_layout
+
+\begin_layout Standard
+Sistemi za upravljanje bazama podataka nisu specifični za Javu, niti su
+ relacione baze specifične za određenu aplikaciju.
+ Taj važan princip zove se nezavisnost podataka.
+ Drugim rečima, 
+\shape italic
+podaci traju duže od bilo koje aplikacije
+\shape default
+.
+ Relaciona tehnologija omogućuje razmenu podataka između različitih podataka,
+ ili između različitih tehnologija koje čine delove iste aplikacije.
+ Relaciona tehnologija je zajednički imenilac mnogih različitih sistema
+ i tehnoloških platformi i sreće se u gotovo svim poslovnim aplikacijama.
+\end_layout
+
+\begin_layout Standard
+Da bi se efikasno koristio Hibernate, neophodno je solidno razumevanje relaciono
+g modela i jezika SQL.
+ Prisetimo se zato nekih SQL termina i naredbi.
+ 
+\end_layout
+
+\begin_layout Paragraph*
+Kreiranje tabela
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+CREATE TABLE muzicari(muzicar_id INT, prezime CHAR(40), 
+\begin_inset Newline newline
+\end_inset
+
+ime CHAR(40), nadimak CHAR(40))
+\end_layout
+
+\begin_layout Paragraph
+Unos podataka u tabele
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+INSERT INTO muzicari(mizicar_id, prezime, ime, nadimak) VALUES
+\begin_inset Newline newline
+\end_inset
+
+(2, 'Lydon', 'John', 'Johnny Rotten')
+\end_layout
+
+\begin_layout Paragraph*
+Izmena zapisa koji su već uneti u tabelu
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+UPDATE albumi SET godina = 1994 WHERE album_id = 4
+\end_layout
+
+\begin_layout Paragraph*
+Brisanje zapisa iz tabele
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+DELETE from albumi WHERE album_id = 4
+\end_layout
+
+\begin_layout Paragraph*
+Upiti
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SELECT naslov FROM albumi WHERE categorija = 'jazz'
+\end_layout
+
+\begin_layout Paragraph*
+Ukrštanje (join) 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SELECT grupe.ime_grupe FROM grupe, albumi WHERE 
+\begin_inset Newline newline
+\end_inset
+
+albumi.kategorija = 'alternativa' AND grupe.grupa_id = albumi.grupa_id
+\end_layout
+
+\begin_layout Paragraph
+Podupiti
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SELECT naslov FROM albumi, WHERE grupa_id IN 
+\begin_inset Newline newline
+\end_inset
+
+(SELECT grupe.grupa_id FROM grupe, grupa_muzicar WHERE 
+\begin_inset Newline newline
+\end_inset
+
+grupa_muzicar.muzicar_id = 2 AND 
+\begin_inset Newline newline
+\end_inset
+
+grupe.grupa_id = grupa_muzicar.grupa_id)
+\end_layout
+
+\begin_layout Standard
+Transakcija je jedna ili više SQL naredbi prema kojima se treba odnositi
+ kao prema nedeljivoj jedinici rada.
+ Ako se bilo koja od naredbi koje čine transakciju ne izvrši kako treba,
+ od cele transakcije mora da se odustane, uključujući i poništavanje svih
+ naredbi koje su eventualno uspešno izvršene pre naredbe koja nije uspela.
+ Ako se uspešno izvrši ceo niz naredbi koje čine transakciju, bazi podataka
+ se šalje signal da efekte transakcije učini trajnim; ta operacija se zove
+ 
+\shape italic
+commit
+\shape default
+.
+ Odustajanje od transakcije se zove 
+\shape italic
+rollback
+\shape default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Relaciona baza je jedna strana alata za objektno-relaciono preslikavanje;
+ druga strana sastoji se od objekata u Java aplikaciji koji treba da se
+ perzistiraju i učitaju iz baze podataka pomoću jezika SQL.
+ Postoje dva rešenja za ORM problem kojima ćemo posvetiti pažnju: serijalizacija
+ i objektno orijentisane baze podataka (OODBMS).
+\end_layout
+
+\begin_layout Subsubsection*
+Serijalizacija
+\end_layout
+
+\begin_layout Standard
+U Javu je ougrađen mehanizam za perzistenciju: to je serijalizacija.
+ Ona omogućuje 
+\begin_inset Quotes eld
+\end_inset
+
+snimanje
+\begin_inset Quotes erd
+\end_inset
+
+ stanja mreže objekata (stanja aplikacije) u tok bajtova, koji se zatim
+ može snimiti u datoteku ili smestiti u bazu podataka.
+ Problem sa serijalizacijom je u tome što se serijalizovanoj mreži povezanih
+ objekata može pristupiti samo kao celini, tj.
+ nije moguće iščitati podatke iz toka bez njegovog prethodnog kompletnog
+ deserijalizovanja.
+ To znači da se serijalizovani tok bajtova ne može koristiti za pretragu
+ ili agregaciju velikih skupova podataka.
+ Nije moguće čak ni pristupiti pojedinačnim objektima ili podskupovima objekata.
+ Imajući u vidu tekuću tehnologiju, serijalizacija nije odgovarajuća kao
+ rešenje za prezistenciju konkurentnih Web aplikacija i može se razmatrati
+ samo u slučaju prostijih desktop programa.
+\end_layout
+
+\begin_layout Subsubsection*
+Objektno orijentisane baze podataka
+\end_layout
+
+\begin_layout Standard
+Pošto Java radi sa objektima, bilo bi idealno kada bi oni mogli da se sačuvaju
+ u bazi podataka bez ikakvog menjanja ili kalupljenja objektnog modela.
+ Sredinom devedesetih godina objektno orijentisane baze podataka su postale
+ popularne, a zasnivaju se na ideji da se u njima sačuva mreža objekata,
+ sa svim čvorovima i pokazivačima, tako da ta mreža objekata može da se
+ rekonstruiše u memoriji.
+ Objektno orijentisan DBMS je u stvari više proširenje okruženja aplikacije
+ nego samostalan sistem za čuvanje podataka.
+ OODBMS je obično implementiran u više slojeva, sa tesnom vezom između delova
+ za smeštanje podataka, privremene memorije za objekte i klijentskom aplikacijom
+ koje komuniciraju pomoću namenskog mrežnog protokola.
+ Objektno orijentisane baze podataka nisu postale popularne i većina programera
+ radije radi sa relacionim bazama.
+ Razlog za to je i činjenica da je objektno orijentisana baza vezana za
+ aplikaciju, tj.
+ nije nezavisan sistem za čuvanje podataka kao što je to relaciona baza
+ (tj.
+ podaci sačuvani u bazi nisu nezavisni od aplikacije).
+\end_layout
+
+\begin_layout Subsection*
+JDBC
+\end_layout
+
+\begin_layout Standard
+Kada se radi sa SQL bazom podataka u Java aplikaciji, Java kod generiše
+ SQL naredbe bazi podataka preko API-ja Java Database Connectivity (JDBC).
+ Bez obzira da li su SQL naredbe ručno napisane u Java kodu, ili se usput
+ generišu, JDBC API se koristi za povezivanje argumenata u pripremi parametara
+ za upit, izvršavanje upita, pregled tabele sa rezultatima upita, dobijanje
+ vrednosti iz skupa rezultata i sl.
+ 
+\end_layout
+
+\begin_layout Standard
+Da bismo zaista razumeli svrhu ORM alata, podsetićemo se ukratko kako se
+ radi sa bazama podataka u Javi preko interfejsa JDBC, odnosno kako se ovaj
+ interfejs koristi za pristup alatima za baze podataka (DBMS, Database Managemen
+t Systems).
+ 
+\end_layout
+
+\begin_layout Standard
+Da bi se JDBC upotrebio u programu, mora se navesti uvesti paket 
+\family typewriter
+java.sql
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+JDBC objekti najnižeg nivoa pripadaju klasi 
+\family typewriter
+Connection
+\family default
+.
+ Oni su stvarna veza sa sistemom za rad sa bazama podataka (DBMS) i kreiraju
+ se sledećom sintaksom: 
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String url = "jdbc:mysql://localhost:8803";
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String username = 
+\begin_inset Quotes eld
+\end_inset
+
+mysql
+\begin_inset Quotes erd
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String password = 
+\begin_inset Quotes eld
+\end_inset
+
+sa
+\begin_inset Quotes erd
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Class.forName("com.mysql.jdbc.Driver"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Connection connection = null;
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+try {
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+connection = DriverManager.getConnection(url, username, pasword); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} catch (Exception ex) {
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+ex.printStackTrace();
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} finally {
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+if( con != null ) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+try { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+con.close( ); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+} catch( Exception e ) {
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+e.printStackTrace( ); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+}
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Prva naredba, 
+\family typewriter
+Class.forName()
+\family default
+, registruje JDBC drajver koji će se koristiti.
+ U try-catch bloku pravi se objekat veze sa bazom.
+ 
+\end_layout
+
+\begin_layout Standard
+Objekti klase 
+\family typewriter
+Statement
+\family default
+ predstavljaju pojedinačne SQL naredbe koje će se izdavati objektu 
+\family typewriter
+Connection
+\family default
+:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Statement stat = connection.prepareStatement
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+("SELECT * FROM tblWORKLOAD");
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Posebna vrsta naredbi su tzv.
+ pripremljene naredbe (prepared statement).
+ Te naredbe svoj SQL kod čuvaju već kompajliran da bi se brže izvršavao.
+ Pripremljene naredbe su objekti klase 
+\family typewriter
+PreparedStatement
+\family default
+.
+ Sledeći kod priprema SQL naredbu za prikaz zapisa tabele:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SELECT * FROM tblWORKLOAD WHERE status = ?
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+PreparedStatement prep = connection.prepareStatement
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+("SELECT * FROM tblWORKLOAD WHERE status = ?"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+prep.setString(1,"W");
+\end_layout
+
+\begin_layout Standard
+Pripremljena naredba se generiše pomoću objekta klase 
+\family typewriter
+Connection
+\family default
+.
+ Znak pitanja je mesto za parametar koji se prosleđuje upitu; da bi se on
+ dostavio, koristi se metod 
+\family typewriter
+setString()
+\family default
+ objekta 
+\family typewriter
+PreparedStatement
+\family default
+ koji služi za prosleđivanje stringa "W
+\begin_inset Quotes erd
+\end_inset
+
+ kao prvog (i u ovom slučaju jedinog) parametra upita (postoje i druge metode
+ za različite tipove parametara, npr.
+ 
+\family typewriter
+\size small
+setAsciiStream(), setBigDecimal(), setBinaryStream(), setBoolean(), setByte(),
+ setBytes(),
+\begin_inset Newline newline
+\end_inset
+
+ setDate(), setDouble(), setFloat(), setInt(), setLong(), setNull(), 
+\begin_inset Newline newline
+\end_inset
+
+setObject(), setShort(), setString(), setTime(), setTimestamp() 
+\family default
+\size default
+i
+\family typewriter
+\size small
+ 
+\begin_inset Newline newline
+\end_inset
+
+setUnicodeStream()
+\family default
+\size default
+).
+ Kada u SQL stringu ima više znakova pitanja, numeracija parametara i njihov
+ tip mora da se poklopi sa njihovim rasporedom u SQL stringu.
+ 
+\end_layout
+
+\begin_layout Standard
+SQL naredbe SELECT kao što je prethodna vraćaju podatke koji se smeštaju
+ u skup rezultata (result set); za to služi JDBC klasa 
+\family typewriter
+ResultSet
+\family default
+ i odgovarajući metod 
+\family typewriter
+executeQuery()
+\family default
+.
+ Ako se koristi neka SQL naredba koja ne vraća rezultate (INSERT, DELETE
+ ili UPDATE), onda treba upotrebiti metod 
+\family typewriter
+executeUpdate()
+\family default
+ klase 
+\family typewriter
+Statement
+\family default
+.
+ Na primer, 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+ResultSet rs = prep.executeQuery(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+while(rs.next() ) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+System.out.println( rs.getString("URL")); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Kada se poziva metod 
+\family typewriter
+executeQuery()
+\family default
+ za pripremljenu naredbu kao u prethodnom primeru, za skup rezultata rs
+ treba pozvati metod 
+\family typewriter
+next()
+\family default
+ da bi se dobio prvi zapis iz rezultata.
+ Metod 
+\family typewriter
+next()
+\family default
+ će vratiti false kada više ne bude bilo rezultata.
+ U sledećem redu, koristi se metod 
+\family typewriter
+getString()
+\family default
+ za ispis polja iz tražene tabele.
+ String URL u ovom redu zadaje ime polja koje treba da se iščita iz dobijenog
+ skupa rezultata upita.
+ Ako SQL naredba ne vraća rezultate, postupak je malo drugačiji.
+ U tom slučaju treba koristiti metod 
+\family typewriter
+executeUpdate()
+\family default
+ umesto 
+\family typewriter
+executeQuery()
+\family default
+ jer nema povratne vrednosti, već se samo izvršava SQL.
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+prep = connection.prepareStatement("DELETE * FROM tblWORKLOAD 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+WHERE status = ?"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+prep.setString(1,"W");
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+prep.executeUpdate();
+\end_layout
+
+\begin_layout Standard
+Aplikacija ne radi direktno sa tabelarnom predstavom poslovnih entiteta,
+ već ima sopstveni, objektno orijentisani model entiteta.
+ Umesto da direktno radi sa poljima i zapisima SQL skupa rezultata, poslovna
+ logika Java aplikacije komunicira sa bazom i "pretvara
+\begin_inset Quotes erd
+\end_inset
+
+ je u skup povezanih objekata.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Podešavanje Hibernate projekta
+\end_layout
+
+\begin_layout Standard
+Rad sa API-jem JDBC svodi se na izvršavanje zadataka veoma niskog nivoa,
+ a programere aplikacija više zanima sam problem koji zahteva pristup podacima.
+ Ono što programeri zaista žele jeste da napišu kod koji će pronalaziti
+ i čuvati 
+\shape italic
+objekte
+\shape default
+ u bazi podataka.
+ Za to služi Hibernate.
+ Da bi se koristio, prvo ga je neophodno preuzeti sa adrese http://www.hibernate.o
+rg/ (ovde ćemo koristiti verziju 3.2) i uključiti odgovarajuće jar arhive
+ u biblioteku Java projekta.
+ Takođe, potrebno je uključiti JDBC drajver za bazu podataka sa kojom će
+ se raditi.
+ To je još jedna podjednako važna prednost alata Hibernate: ne morate biti
+ stručnjak za različite DBMS sisteme (MySQL, Oracle, SQLServer, IBM Informix,
+ SQLite itd.): Hibernate podržava rad sa gotovo svim DBMS sistemima
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Spisak podržanih DMBS sistema može se videti na adresi https://community.jboss.org
+/wiki/SupportedDatabases2
+\end_layout
+
+\end_inset
+
+, a svi trikovi i specifičnosti za određeni sistem već
+\begin_inset space \space{}
+\end_inset
+
+su ugrađeni.
+ Takođe, ako se desi da se iz nekog razloga promeni DBMS sa podacima iz
+ aplikacije, dovoljno je promeniti samo odgovarajuće parametre u konfiguracionoj
+ datoteci, obezbediti odgovarajući drajver i upotrebiti Hibernate za ponovno
+ generisanje šeme baze podataka; sama aplikacija ostaje netaknuta.
+\end_layout
+
+\begin_layout Standard
+Hibernate aplikacije definišu perzistentne klase koje se preslikavaju u
+ tabele baze podataka.
+ Klase se definišu na osnovu analize problema koji se rešava, tj.
+ predstavljaju model domena.
+ Započećemo sa jednom perzistentnom klasom i objasniti kako ona izgleda,
+ kako se za nju piše preslikavanje i šta može da se radi sa njenim instancama.
+ Cilj sledećeg primera jeste da se poruke sačuvaju u bazi podataka i iz
+ nje iščitaju radi prikaza.
+ Uvešćemo zato prvu perzistentnu klasu 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ koja predstavlja poruke koje se mogu prikazati:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+package hello;
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public class Poruka { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private Long id; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private String tekst; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private Poruka sledecaPoruka; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Poruka() {} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public Poruka(String tekst) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.tekst = tekst; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public Long getId() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return id; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private void setId(Long id) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.id = id; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public String getTekst() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return tekst; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public void setTekst(String tekst) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.tekst = tekst; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public Poruka getSledecaPoruka() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return sledecaPoruka; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public void setSledecaPoruka(Poruka sledecaPoruka) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.sledecaPoruka = sledecaPoruka; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Klasa 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ ima tri podatka člana: identifikator (id), tekst poruke i referencu na
+ drugi objekat tipa 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+.
+ Identifikator omogućuje aplikaciji da pristupi primarnom ključu perzistentnog
+ objekta u bazi podataka.
+ Ako dve instance klase 
+\family typewriter
+Poruka
+\family default
+ imaju istu vrednost identifikatora, to znači da predstavljaju isti zapis
+ u bazi podataka.
+ U ovom primeru kao tip identifikatora koristi se 
+\family typewriter
+Long
+\family default
+, ali to ne mora da bude tako.
+ Hibernate dozvoljava gotovo svaki tip kao tip identifikatora.
+ Primetićete da svi podaci članovi klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ koriste stil JavaBean i odgovarajuće get/set metode.
+ Klasa takođe ima konstruktor bez argumenata.
+ Perzistentne klase će gotovo uvek biti takve.
+ Argument bez konstruktora je neophodan jer alati kao što je Hibernate koriste
+ refleksiju sa ovim tipom konstruktora da bi instancirali objekte.
+ Instancama klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ može da upravlja (tj.
+ da ih perzistira) Hibernate, ali i ne mora.
+ Pošto objekat klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ ne implementira nikakve interfejse niti nasleđuje klase specifične za Hibernate
+, može se koristiti kao bilo koja Java klasa: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+Poruka poruka = new Poruka("Hello World"); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+System.out.println(poruka.getTekst()); 
+\end_layout
+
+\begin_layout Standard
+Ovaj kod radi ono što se i očekuje, tj.
+ ispisuje 
+\family typewriter
+\size small
+Hello World
+\family default
+\size default
+ u konzoli.
+ Dakle, perzistentna klasa se može koristiti u bilo kom kontekstu, tj.
+ ne zahteva nikakav kontejner.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje klase u šemu baze podataka
+\end_layout
+
+\begin_layout Standard
+Da bi objektno-relaciono preslikavanje bilo moguće, Hibernate zahteva informacij
+e o tome kako tačno klasa 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ treba da se perzistira.
+ Drugim rečima, Hibernate mora da zna kako instance klase treba da se čuvaju
+ u bazi podataka i učitavaju iz nje.
+ Ti metapodaci mogu da se upišu u XML dokument za preslikavanje, u kome
+ se između ostalog definiše kako se podaci članovi klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ preslikavaju u kolone tabele 
+\family typewriter
+\size small
+PORUKA
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<?xml version="1.0"?> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<!DOCTYPE hibernate-mapping 
+\begin_inset Newline newline
+\end_inset
+
+PUBLIC "-//Hibernate/Hibernate Mapping DTD//EN" 
+\begin_inset Newline newline
+\end_inset
+
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<hibernate-mapping> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<class name="hello.Poruka" table="PORUKA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<id name="id" column="PORUKA_ID"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<generator class="increment"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</id> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="tekst" column="PORUKA_TEKST"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<many-to-one name="sledecaPoruka" cascade="all" 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+column="SLEDECA_PORUKA_ID" foreign-key="FK_SLEDECA_PORUKA"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</class> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</hibernate-mapping>
+\end_layout
+
+\begin_layout Standard
+Dokument za preslikavanje kaže da klasa 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ treba da se perzistira u tabelu 
+\family typewriter
+\size small
+PORUKA
+\family default
+\size default
+, da se podatak član preslikava u kolonu 
+\family typewriter
+\size small
+PORUKA_ID
+\family default
+\size default
+, da se podatak član 
+\family typewriter
+\size small
+tekst
+\family default
+\size default
+ preslikava u kolonu 
+\family typewriter
+\size small
+PORUKA_TEKST
+\family default
+\size default
+, a da je podatak član 
+\family typewriter
+\size small
+sledecaPoruka
+\family default
+\size default
+ u vezi tipa many-to-one koja se preslikava u kolonu sa spoljnim ključem
+ (foreign key) nazvanom 
+\family typewriter
+\size small
+SLEDECA_PORUKA_ID
+\family default
+\size default
+.
+ Hibernate takođe generiše šemu baze podataka umesto nas i dodaje spoljni
+ ključ nazvan 
+\family typewriter
+\size small
+FK_SLEDECA_PORUKA
+\family default
+\size default
+ u bazi podataka.
+ (Zasad zanemarite ostale detalje.) XML dokument nije težak za razumevanje,
+ a možete ga lako pisati i održavati ručno.
+ 
+\end_layout
+
+\begin_layout Standard
+Hibernate sada ima dovoljno informacija za generisanje svih SQL naredbi
+ za umetanje, ažuriranje, brisanje i pronalaženje instanci klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+.
+ Te naredbe više ne morate da pišete ručno.
+ Napravite datoteku Poruka.hbm.xml sa sadržajem iz prethodnog listinga i snimite
+ je uz datoteku 
+\family typewriter
+\size small
+Poruka.java
+\family default
+\size default
+ u paketu 
+\family typewriter
+\size small
+hello
+\family default
+\size default
+.
+ Nastavak hbm je dogovor imenovanja koji se koristi u Hibernate zajednici,
+ a većina programera obično čuva datoteke sa preslikavanjem uz izvorni kod
+ odgovarajućih klasa.
+\end_layout
+
+\begin_layout Subsection*
+Snimanje i učitavanje objekata
+\end_layout
+
+\begin_layout Standard
+Kod koji snima novi objekat klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ u bazu podataka izgleda ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+package hello; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+import java.util.*; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+import org.hibernate.*; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+import persistence.*; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public class HelloWorld { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public static void main(String[] args) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+// Prva jedinica rada 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Session sesija = HibernateUtil.getSessionFactory().openSession(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Transaction transakcija = session.beginTransaction(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Poruka poruka = new Poruka("Hello World"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Long idPoruka = (Long) sesija.save(poruka); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+transakcija.commit(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+sesija.close(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+// Druga jedinica rada 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Session novaSesija = HibernateUtil.getSessionFactory().openSession(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Transaction novaTransakcija = newSession.beginTransaction(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+List poruka = novaSesija.createQuery("from Poruka p 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+order by p.tekst asc").list(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+System.out.println("pronadjeno poruka: " + poruke.size());
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+for (Poruka p : poruke) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+System.out.println(p.getTekst()); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+novaTransakcija.commit(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+novaSesija.close(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+HibernateUtil.shutdown(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Klasa ima standardnu Javinu metodu 
+\family typewriter
+\size footnotesize
+main()
+\family default
+\size default
+ koja izvršava dve odvojene jedinice rada.
+ Prva snima nov objekat 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ u bazu, a druga učitava sve objekte i ispisuje njihov tekst u konzoli.
+ Da biste pristupili bazi podataka, potrebni su sledeći interfejsi:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\size small
+Session
+\family default
+\size default
+.
+ Hibernate klasa 
+\family typewriter
+\size small
+Session
+\family default
+\size default
+ je jednonitni objekat koji modeluje jedinicu rada sa bazom podataka.
+ Interfejs 
+\family typewriter
+\size small
+Session
+\family default
+\size default
+ sastoji se od reda SQL naredbi koji u određenom trenutku treba da se sinhronizu
+je sa bazom podataka i mape perzistiranih instanci koje sesija nadgleda.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\size small
+Transaction
+\family default
+\size default
+.
+ Koristi se za programsko postavljanje granica transakcija, koje nije obavezno.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\size small
+Query
+\family default
+\size default
+.
+ Upit nad bazom podataka može da se napiše u objektno orijentisanom jeziku
+ HQL (Hibernate Query Language) ili u običnom SQL-u.
+ Interfejs 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ omogućuje pisanje upita, povezivanje argumenata u pripremljenim upitima
+ i izvršavanje upita na različite načine.
+\end_layout
+
+\begin_layout Standard
+Kada se izvrši prva jedinica rada, izvršava se nešto slično SQL naredbi:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+insert into PORUKA (PORUKA_ID, PORUKA_TEKST, SLEDECA_PORUKA_ID) 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+values (1, 'Hello World', null) 
+\end_layout
+
+\begin_layout Standard
+Kolona 
+\family typewriter
+\size small
+PORUKA_ID
+\family default
+\size default
+ se inicijalizuje vrednošću 1 koja nigde nije dodeljena, pa bi se očekivalo
+ da bude NULL.
+ Međutim, podatak član 
+\family typewriter
+\size small
+id
+\family default
+\size default
+ je poseban jer je to identifikator koji sadrži generisanu jedinstvenu vrednost.
+ Tu vrednost Hibernate dodeljuje instanci klase 
+\family typewriter
+\size small
+Poruka
+\family default
+\size default
+ kada se pozove metoda 
+\family typewriter
+\size small
+save()
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Standard
+U drugoj jedinici rada string "
+\family typewriter
+\size small
+from Poruka p order by p.tekst asc
+\family default
+\size default
+" je Hibernate upit izražen jezikom HQL.
+ Taj upit se interno prevodi u sledeći SQL kada se pozove metoda 
+\family typewriter
+\size small
+list()
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select p.PORUKA_ID, p.PORUKA_TEKST, p.SLEDECA_PORUKA_ID 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+from PORUKA p order by p.PORUKA_TEKST asc 
+\end_layout
+
+\begin_layout Standard
+Ako izvršite ovaj metod 
+\family typewriter
+\size small
+main()
+\family default
+\size default
+ (još nemojte, jer nismo objasnili kako se podešava Hibernate), na konzoli
+ će se ispisati: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+pronadjeno poruka: 1 Hello World 
+\end_layout
+
+\begin_layout Standard
+Pre nego što objasnimo kako se podešava Hibernate, objasnimo još dva svojstva:
+ automatsku proveru 
+\begin_inset Quotes eld
+\end_inset
+
+prljavog
+\begin_inset Quotes erd
+\end_inset
+
+ objekta (dirty checking) i kaskadiranje u trećoj jedinici rada koju ćemo
+ dodati u 
+\family typewriter
+\size small
+main()
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+//treca jedinica rada 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Session trecaSesija = HibernateUtil.getSessionFactory().openSession(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Transaction trecaTransakcija = trecaSesija.beginTransaction(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+// idPoruka sadrži id prve poruke 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+poruka = (Poruka) trecaSesija.get(Poruka.class, idPoruka); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+poruka.setTekst("Dobrodosli"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+poruka.setSledecaPoruka(new Poruka("Vodi me kuci")); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+trecaTransakcija.commit(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+trecaSesija.close();
+\end_layout
+
+\begin_layout Standard
+Ovaj kod izvršava tri SQL naredbe u istoj transakciji baze podataka: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select p.PORUKA_ID, p.PORUKA_TEKST, p.SLEDECA_PORUKA_ID 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+from PORUKA p where p.PORUKA_ID = 1 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+insert into PORUKA (PORUKA_ID, PORUKA_TEKST, SLEDECA_PORUKA_ID) values
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+(2, 'Vodi me kuci', null) 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+update PORUKA set PORUKA_TEKST = 'Dobrodosli', 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+SLEDECA_PORUKA_ID = 2 where PORUKA_ID = 1 
+\end_layout
+
+\begin_layout Standard
+Primetite kako je Hibernate registrovao izmenu svojstava 
+\family typewriter
+\size small
+tekst
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+sledecaPoruka
+\family default
+\size default
+ prve poruke i automatski je ažurirao bazu podataka, odnosno automatski
+ je obavio proveru da li je objekat 
+\begin_inset Quotes eld
+\end_inset
+
+prljav
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Ta funkcionalnost štedi napor da se eksplicitno zahteva da Hibernate ažurira
+ bazu kad god se promeni stanje objekta u jedinici rada.
+ Slično, nova poruka je perzistirana kada je referenca kada je referenca
+ na nju kreirana iz prve poruke.
+ Ta funkcionalnost se zove kaskadno snimanje i štedi napor eksplicitnog
+ perzistiranja novog objekta pozivom metode 
+\family typewriter
+\size small
+save()
+\family default
+\size default
+, pod uslovom da se do novog objekta može stići preko objekta koji je već
+ perzistiran.
+ Primetite takođe da redosled SQL naredbi nije isti kao redosled kojim smo
+ postavili vrednosti podataka članova objekta.
+ Hibernate koristi napredni algoritam za određivanje efikasnog redosleda
+ izvršavanja SQL naredbi da bi se izbegla ograničenja koja nameću spoljni
+ ključevi; to svojstvo se zove 
+\shape italic
+transactional write-behind
+\shape default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Ako sada pokrenemo aplikaciju, prikazao bi se sledeći rezultat:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+pronadjeno poruka: 2 Dobrodosli Vodi me kuci
+\end_layout
+
+\begin_layout Subsection*
+Podešavanje za Hibernate
+\end_layout
+
+\begin_layout Standard
+Hibernate se inicijalizuje tako što se objekat 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+ napravi iz objekta 
+\family typewriter
+\size small
+Configuration
+\family default
+\size default
+.
+ Objekat klase 
+\family typewriter
+\size small
+Configuration
+\family default
+\size default
+ se može posmatrati kao predstava datoteke se podešavanjima (tj.
+ properties file) za Hibernate.
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SessionFactory sessionFactory = new Configuration().
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+configure().buildSessionFactory();
+\end_layout
+
+\begin_layout Standard
+Kada se pozove konstruktor 
+\family typewriter
+\size small
+Configuration()
+\family default
+\size default
+, Hibernate traži datoteku 
+\family typewriter
+\size small
+
+\begin_inset Newline newline
+\end_inset
+
+hibernate.properties
+\family default
+\size default
+ u korenu putanje klasa; ako je nađe, svojstva za Hibernate se učitavaju
+ i dodaju objektu 
+\family typewriter
+\size small
+Configuration
+\family default
+\size default
+.
+ Kada se pozove metoda 
+\family typewriter
+\size small
+configure()
+\family default
+\size default
+, Hibernate traži datoteku 
+\family typewriter
+\size small
+hibernate.cfg.xml
+\family default
+\size default
+ u korenu putanje klasa, a ako je ne nađe baca izuzetak.
+ Ako podešavanja u XML konfiguracionoj datoteci nisu duplikati ranije podešenih
+ svojstava, XML podešavanja zamenjuju ranija.
+ Konfiguraciona datoteka 
+\family typewriter
+\size footnotesize
+hibernate.properties
+\family default
+\size default
+ mora da se nađe u korenu putanje klasa, izvan bilo kog paketa.
+ 
+\end_layout
+
+\begin_layout Standard
+Konfiguraciona datoteka za Hibernate (
+\family typewriter
+\size footnotesize
+hibernate.cfg.xml
+\family default
+\size default
+) koja treba da se nađe izvan svih paketa u izvornom kodu izgleda približno
+ ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<!DOCTYPE hibernate-configuration SYSTEM 
+\begin_inset Newline newline
+\end_inset
+
+"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<hibernate-configuration> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<session-factory> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="hibernate.connection.driver_class"> 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+org.hsqldb.jdbcDriver 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</property> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="hibernate.connection.url"> 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+jdbc:hsqldb:hsql://localhost 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</property> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="hibernate.connection.username"> sa </property>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="hibernate.connection.password"> sa </property>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="show_sql">true</property> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="format_sql">true</property> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<mapping resource="hello/Poruka.hbm.xml"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</session-factory> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</hibernate-configuration>
+\end_layout
+
+\begin_layout Standard
+Deklaraciju tipa dokumenta (DTD) XML koristi za proveru dokumenta poređenjem
+ sa DTD-om Hibernate konfiguracije.
+ Primetite da to nije isti DTD kao za Hibernate XML datoteke sa preslikavanjem.
+ Na početku datoteke nalaze se podešavanja za povezivanje sa bazom podataka.
+ Hibernate mora da zna koji JDBC drajver, URL adresu, korisničko ime i lozinku
+ koristite za povezivanje sa bazom.
+ Takođe je omogućen ispis SQL naredbi koje izvršava Hibernate u konzoli,
+ uz lepo formatiranje.
+ Poslednji red u podešavanjima imenuje Hibernate XML datoteku sa preslikavanjem,
+ jer objekat 
+\family typewriter
+\size small
+Configuration
+\family default
+\size default
+ mora da zna za sve XML datoteke sa preslikavanjem pre nego što budete u
+ stanju da napravite objekat 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+.
+ U većini Hibernate aplikacija objekat 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+ treba da se instancira samo jednom, tokom pokretanja aplikacije.
+ Tu instancu zatim treba da koristi sav kod određenog procesa, kao i svaki
+ objekat 
+\family typewriter
+\size small
+Session
+\family default
+\size default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Kao šablon za inicijalizaciju obično se implementira klasa 
+\family typewriter
+\size small
+HibernateUtil
+\family default
+\size default
+:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+import org.hibernate.*; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+import org.hibernate.cfg.*; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public class HibernateUtil { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private static SessionFactory sessionFactory; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+static { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+try { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+sessionFactory=new Configuration().
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+configure().buildSessionFactory(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+} catch (Throwable ex) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+throw new ExceptionInInitializerError(ex); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public static SessionFactory getSessionFactory() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return sessionFactory; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public static void shutdown() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+getSessionFactory().close(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Hibernate se pokreće u statičkom bloku za inicijalizaciju; taj blok se izvršava
+ samo jednom prilikom učitavanja klase.
+ Prvi poziv objekta 
+\family typewriter
+\size small
+HibernateUtil
+\family default
+\size default
+ u aplikaciji učitava klasu, pravi 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+ i istovremeno inicijalizuje statičku promenljivu.
+ Ako se pojavi problem, bilo koji 
+\family typewriter
+\size small
+Exception
+\family default
+\size default
+ ili 
+\family typewriter
+\size small
+Error
+\family default
+\size default
+ se baca iz statičkog bloka (zato se hvata 
+\family typewriter
+\size small
+Throwable
+\family default
+\size default
+).
+ Pakovanje izuzetka u 
+\family typewriter
+\size small
+ExceptionInInitializerError
+\family default
+\size default
+ je obavezno za statičke inicijalizatore.
+ Kad god u aplikaciji zatreba pristup Hibernate objektu 
+\family typewriter
+\size small
+Session
+\family default
+\size default
+, do njega se može stići naredbom
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+HibernateUtil.getSessionFactory().openSession();
+\end_layout
+
+\begin_layout Subsection*
+Kreiranje šeme baze podataka
+\end_layout
+
+\begin_layout Standard
+Šemu baze podataka možete napraviti ručno, pisanjem DDL datoteke sa SQL
+ naredbama CREATE, ili što je mnogo zgodnije, možete da prepustite da Hibernate
+ obavi taj zadatak i napravi podrazumevanu šemu za aplikaciju.
+ Da bi Hibernate automatski generisao SQL DDL, neophodno je da preslikavanje
+ bude definisano.
+ Alat koja se koristi za generisanje šeme je hbm2ddl, a odgovarajuća klasa
+ 
+\family typewriter
+\size small
+org.hibernate.tool.hbm2ddl.SchemaExport
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Standard
+Postoji više načina za pokretanje ovog alata, a ovde ćemo opisati dva: podešavan
+jem svojstva 
+\family typewriter
+\size small
+hibernate.hbm2ddl.auto
+\family default
+\size default
+ u Hibernate konfiguracionoj datoteci ili iz programskog koda.
+ Ako se ovo svojstvo podesi na create, naredbe DROP će pratiti naredbe CREATE
+ prilikom kreiranja objekta 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+.
+ Sa podešavanjem create-drop, prilikom uništavanja objekta 
+\family typewriter
+\size small
+SessionFactory
+\family default
+\size default
+ generišu se naredbe DROP, pa se nakon svakog izvršavanja dobija prazna
+ šema baze podataka.
+\end_layout
+
+\begin_layout Standard
+Izvoz šeme baze podataka iz programa je jednostavan:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Configuration cfg = new Configuration().configure(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+SchemaExport schemaExport = new SchemaExport(cfg); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+schemaExport.create(false, true); 
+\end_layout
+
+\begin_layout Standard
+Nov objekat 
+\family typewriter
+\size small
+SchemaExport
+\family default
+\size default
+ se pravi iz objekta 
+\family typewriter
+\size small
+Configuration
+\family default
+\size default
+; sva podešavanja (drajver baze podataka, URL za povezivanje itd.) prosleđuju
+ se konstruktoru klase 
+\family typewriter
+\size small
+SchemaExport
+\family default
+\size default
+.
+ Metoda 
+\family typewriter
+\size small
+create(false, true)
+\family default
+\size default
+ započinje generisanje DDL datoteke, bez prikaza SQL naredbi na standardnom
+ izlazu (parametar false), ali uz trenutno izvršavanje u bazi podataka (parameta
+r true).
+ 
+\end_layout
+
+\begin_layout Standard
+Još jedna korisna vrednost svojstva 
+\family typewriter
+\size small
+hibernate.hbm2ddl.auto
+\family default
+\size default
+ tokom razvoja je validate.
+ Ono pokreće alat 
+\family typewriter
+\size small
+SchemaValidator
+\family default
+\size default
+ koje tokom pokretanja aplikacije proverava da li se preslikavanje poklapa
+ sa JDBC metapodacima, odnosno da li se stanje u bazi i preslikavanje poklapaju.
+ Provera se može pozvati i iz programa, pozivom klase 
+\family typewriter
+\size small
+SchemaValidator
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Configuration cfg = new Configuration().configure(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+new SchemaValidator(cfg).validate();
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Ako Hibernate ustanovi nepoklapanje između šeme baze i preslikavanja, baca
+ izuzetak.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje: koncepti i strategije
+\end_layout
+
+\begin_layout Subsubsection*
+Preslikavanje identifikatora
+\end_layout
+
+\begin_layout Standard
+Pre nego što pređemo na objašnjenje kako Hibernate upravlja identitetima
+ u bazi podataka, neophodno je da se podsetimo razlike između identičnosti
+ i jednakosti objekata.
+ Identičnost objekata, koja se u Javi proverava operatorom ==, znači da
+ reference na objekte pokazuju na istu lokaciju u memoriji virtuelne mašine.
+ Jednakost (ekvivalencija) objekata proverava se metodom 
+\family typewriter
+\size small
+equals()
+\family default
+\size default
+ koja vraća true ako dva različita (neidentična) objekta sadrže istu vrednost.
+\end_layout
+
+\begin_layout Standard
+Persistencija dodatno usložnjava stvar.
+ Perzistentni objekat je predstava određenog zapisa iz tabele baze podataka
+ u memoriji.
+ Zajedno sa Javinim identitetom (memorijskom lokacijom) i ekvivalentnošću
+ objekata, proverava se i identitet iz baze podataka.
+ Dakle, postoje tri načina za prepoznavanje objekata:
+\end_layout
+
+\begin_layout Itemize
+Objekti su identični ako u Javinoj virtuelnoj mašini zauzimaju istu memorijsku
+ lokaciju.
+ Identitet se može proveriti pomoću operatora == .
+ 
+\end_layout
+
+\begin_layout Itemize
+Objekti su ekvivalentni ako imaju istu vrednost, kao što je definisano u
+ metodi 
+\family typewriter
+\size small
+equals(Object o)
+\family default
+\size default
+.
+ Klase koje eksplicitno ne redefinišu ovaj metod nasleđuju implementaciju
+ tog metoda iz klase 
+\family typewriter
+\size small
+java.lang.Object
+\family default
+\size default
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+Objekti koji se čuvaju u relacionoj bazi podataka su identični ako predstavljaju
+ isti zapis, ili što je isto, ako imaju istu tabelu i primarni ključ.
+ Ovaj pojam je poznat kao identitet baze podataka.
+ Osim operacija za testiranje jednakosti objekata (
+\family typewriter
+\size small
+a == b
+\family default
+\size default
+) i njihove ekvivalencije (
+\family typewriter
+\size small
+a.equals(b)
+\family default
+\size default
+), može se koristiti i 
+\family typewriter
+\size small
+a.getId().equals(b.getId())
+\size footnotesize
+ 
+\family default
+\size default
+za testiranje identičnosti u bazi podataka.
+\end_layout
+
+\begin_layout Standard
+Svojstvo identifikatora objekta (identifier) je posebno, i njegova vrednost
+ je primarni ključ zapisa baze podataka koju predstavlja perzistentni objekat.
+ U našem primeru označavali smo ga kao 
+\family typewriter
+\size small
+id
+\family default
+\size default
+.
+ Običan (prost) identifikator se u Hibernate XML datotekama preslikava na
+ sledeći način:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<id name="id" column="CATEGORY_ID" type="long"> 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<generator class="native"/> 
+\begin_inset Newline newline
+\end_inset
+
+</id>
+\end_layout
+
+\begin_layout Standard
+Identifikator je preslikan u kolonu primarnog ključa 
+\family typewriter
+\size small
+CATEGORY_ID
+\family default
+\size default
+.
+ Hibernate tip za ovo svojstvo je 
+\family typewriter
+\size small
+long
+\family default
+\size default
+, što se u većini baza podataka preslikava u tip BIGINT.
+ Dobra je Hibernate praksa da se u novim aplikacijama umesto 
+\begin_inset Quotes eld
+\end_inset
+
+prirodnih
+\begin_inset Quotes erd
+\end_inset
+
+ primarnih ključeva (tj.
+ kolona tabele koje jedinstveno određuju zapis) koriste 
+\begin_inset Quotes eld
+\end_inset
+
+veštački
+\begin_inset Quotes erd
+\end_inset
+
+ generisani primarni ključevi.
+ Postoji više pristupa generisanju veštačkih primarnih ključeva, ali se
+ najčešće koriste parametri 
+\family typewriter
+\size small
+native
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+increment
+\family default
+\size default
+.
+ Podešavanje 
+\family typewriter
+\size small
+native
+\family default
+\size default
+ je uobičajen izbor za nove aplikacije; kada je reč o nasleđenom kodu, ponekad
+ se moraju koristiti prirodni, čak i složeni primarni ključevi, ali se time
+ ovde nećemo baviti.
+\end_layout
+
+\begin_layout Subsubsection*
+Preslikavanje klasa
+\end_layout
+
+\begin_layout Standard
+Hibernate koristi refleksiju da bi odredio Javin tip podatka člana klase.
+ To znači da su sledeća preslikavanja ekvivalentna:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<property name="opis" column="OPIS" type="string"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<property name="opis" column="OPIS"/> 
+\end_layout
+
+\begin_layout Standard
+Moguće je izostaviti čak i ime kolone ako je isto kao ime podatka člana
+ (uz zanemarivanje velikih i malih slova).
+ Korisno je (ali ne i obavezno) navesti atribut not-null, pošto u tom slučaju
+ Hibernate može da prijavi nedozvoljene null vrednosti bez provere u bazi
+ podataka:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<property name="pocetnaCena" column="POCETNA_CENA" not-null="true"/>
+\end_layout
+
+\begin_layout Subsubsection*
+Preslikavanje nasleđivanja
+\end_layout
+
+\begin_layout Standard
+Jednostavna strategija za preslikavanje klasa u tabele baze podataka mogla
+ bi da bude 
+\begin_inset Quotes eld
+\end_inset
+
+jedna tabela za svaku perzistentnu klasu
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Taj pristup izgleda jednostavno i zaista radi dobro sve dok se ne naiđe
+ na nasleđivanje.
+ Nasleđivanje je odličan primer na kome se uočava neslaganje između objektno
+ orijentisanog i relacionog sveta.
+ Postoje različiti pristupi preslikavanja hijerarhije nasleđivanja:
+\end_layout
+
+\begin_layout Enumerate
+Po jedna tabela za svaku konkretnu klasu sa implicitnim polimorfizmom.
+ Izbegava direktno preslikavanje nasleđivanja i umesto toga tokom izvršavanja
+ koristi polimorfno ponašanje klasa.
+\end_layout
+
+\begin_layout Enumerate
+Po jedna tabela za svaku konkretnu klasu.
+ Odbacuje polimorfizam i nasleđivanje i nasleđuje relacije direktno iz SQL
+ šeme.
+\end_layout
+
+\begin_layout Enumerate
+Jedinstvena tabela za celu hijerarhiju klasa.
+ Omogućuje polimorfizam denormalizacijom SQL šeme i koristi polje sa diskriminat
+orom koje sadrži informaciju o tipu.
+\end_layout
+
+\begin_layout Enumerate
+Posebna tabela za svaku izvedenu klasu.
+ Predstavlja relacije nasleđivanja kao relacije spoljašnjeg ključa.
+\end_layout
+
+\begin_layout Standard
+U nastavku ćemo opisati pristupe 3 i 4.
+ Pretpostavimo da imamo hijerarhiju nasleđivanja kao na sledećoj slici:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename nasledjivanje.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph*
+Jedinstvena tabela za celu hijerarhiju klasa
+\end_layout
+
+\begin_layout Standard
+Celokupna hijerarhija klasa preslikava se u jednu tabelu koja sadrži polja
+ za sve podatke članove svih klasa koje čine hijerarhiju.
+ Konkretna izvedena klasa koju predstavlja određeni zapis prepoznaje se
+ na osnovu vrednosti tipa u diskriminatorskom polju.
+\end_layout
+
+\begin_layout Standard
+Treba obratiti pažnju na dva detalja: prvo, polja za podatke članove deklarisane
+ u izvedenim klasama moraju da dozvole null vrednosti (tj.
+ ne smeju da se deklarišu kao not-null).
+ Kada bi se u izvedenim klasama dozvolila ne-null svojstva, gubitak NOT
+ NULL ograničenja mogao bi da predstavlja ozbiljan problem po pitanju integritet
+a podataka.
+ Drugo, pošto se na ovaj način prave funkcionalne zavisnosti između polja
+ koja ne uzimaju vrednosti null, narušava se normalizacija baze.
+ Za preslikavanje nasleđivanja ovim pristupom koristi se element <subclass>
+ :
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<hibernate-mapping> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<class name="NacinPlacanja" table="NACIN_PLACANJA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<id name="id" column="NACIN_PLACANJA_ID" type="long"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<generator class="native"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</id>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<discriminator column="NACIN_PLACANJA_TIP" type="string"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="vlasnik" column="VLASNIK" type="string"/> ...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<subclass name="KreditnaKartica" discriminator-value="KK"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="broj" column="KK_BROJ"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="mesecIsteka" column="KK_MESEC_ISTEKA"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="godinaIsteka" column="KK_GODINA_ISTEKA"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</subclass> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<subclass name=”Racun” discriminator-value=”RN”> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</subclass>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</class> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</hibernate-mapping>
+\end_layout
+
+\begin_layout Standard
+Da bi se perzistentne klase u hijerarhiji razlikovale, neophodno je dodati
+ posebno polje, tzv.
+ diskriminator.
+ To nije svojstvo perzistentne klase, već ga interno koristi Hibernate.
+ U našem slučaju, ime polja je 
+\family typewriter
+\size small
+NACIN_PLACANJA_TIP
+\family default
+\size default
+ i može da ima string vrednosti “KK” ili “RN”.
+ Hibernate automatski upisuje i čita vrednosti diskriminatora.
+ Svaka izvedena klasa ima sopstveni element <subclass>, a podaci članovi
+ izvedene klase su preslikani u polja tabele 
+\family typewriter
+\size small
+NACIN_PLACANJA
+\family default
+\size default
+.
+ Ne zaboravite da ograničenja NOT NULL za podatke članove izvedenih klasa
+ nisu dozvoljena jer instanca klase 
+\family typewriter
+\size small
+Racun
+\family default
+\size default
+ nece imati podatak član 
+\family typewriter
+\size small
+mesecIsteka
+\family default
+\size default
+, pa polje 
+\family typewriter
+\size small
+KK_MESEC_ISTEKA
+\family default
+\size default
+ za odgovarajući zapis mora imati vrednost NULL.
+ Element <subcelokupna class> može u sebi da sadrži druge elemente <subclass>
+ sve dok se hijerarhija nasleđivanja ne preslika u jedinstvenu tabelu.
+\end_layout
+
+\begin_layout Paragraph*
+Posebna tabela za svaku izvedenu klasu
+\end_layout
+
+\begin_layout Standard
+Svaka klasa i izvedena klasa koja deklariše perzistentna svojstva, uključujući
+ i apstraktne klase, ima sopstvenu tabelu.
+ Tabela sadrži samo polja za podatke članove koji se ne nasleđuju (odnosno
+ za podatke članove koji su deklarisani u samoj izvedenoj klasi), zajedno
+ sa primarnim ključem koji je istovremeno spoljni ključ tabele roditeljske
+ klase.
+ U primeru sa slike, ako je neka instanca izvedene klase 
+\family typewriter
+\size small
+KreditnaKartica
+\family default
+\size default
+ perzistirana, vrednosti podataka članova koje nasleđuje iz klase 
+\family typewriter
+\size small
+NacinPlacanja
+\family default
+\size default
+ smeštaju se kao nov zapis u tabeli 
+\family typewriter
+\size small
+NACIN_PLACANJA
+\family default
+\size default
+.
+ Novi zapis koji se dodaje u tabelu 
+\family typewriter
+\size small
+KREDITNA_KARTICA
+\family default
+\size default
+ sadrži samo podatke članove iz te klase.
+ Dva nova zapisa se povezuju pomoću deljene vrednosti primarnog ključa.
+ Kasnije se instanca izvedene klase može dobiti iz baze podataka ukrštanjem
+ tabele izvedene klase sa tabelom osnovne klase.
+ Osnovna prednost ovakvog pristupa je u tome što je SQL šema normalizovana,
+ i što se lako razvija dodavanjem novih izvedenih klasa.
+ Nasleđivanje se postiže elementom <joined-subclass>:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<hibernate-mapping> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<class name="NacinPlacanja" table="NACIN_PLACANJA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<id name="id" column="NACIN_PLACANJA_ID" type="long"> 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<generator class="native"/>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</id> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="vlasnik" column="VLASNIK" type="string"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<joined-subclass name="KreditnaKartica" table="KREDITNA_KARTICA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="KREDITNA_KARTICA_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="broj" column="BROJ"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="mesecIsteka" column="MESEC_ISTEKA"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<property name="godinaIsteka" column="GODINA_ISTEKA"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</joined-subclass> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<joined-subclass name="RACUN" table="RACUN">
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</joined-subclass>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</class> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</hibernate-mapping>
+\end_layout
+
+\begin_layout Standard
+Primetite da je za tabelu 
+\family typewriter
+\size small
+KREDITNA_KARTICA
+\family default
+\size default
+ potreban primarni ključ, koji istovremeno služi kao spoljni ključ za tabelu
+ 
+\family typewriter
+\size small
+NACIN_PLACANJA
+\family default
+\size default
+.
+ Pronalaženje objekta 
+\family typewriter
+\size small
+KreditnaKartica
+\family default
+\size default
+ zahteva ukrštanje obeju tabela.
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje kolekcija
+\end_layout
+
+\begin_layout Standard
+Većina Hibernate novajlija se sa preslikavanjem kolekcija i različitih asocijaci
+ja sretne kada prvi put pokuša da preslika tipičan odnos roditelj-dete.
+ Međutim, da bi se to preslikavanje razumelo i pravilno uradilo, neophodno
+ je razumeti osnovne pojmove.
+ Java nudi bogat API za kolekcije, pa se uvek može pronaći implementacija
+ koja najbolje odgovara problemu koji se modelira.
+ U nastavku ćemo objasniti kako se preslikavaju najčešće korišćene kolekcije:
+ liste, skupovi i mape.
+\end_layout
+
+\begin_layout Standard
+Ako koristite JDK 5.0, verovatno ste već prešli na korišćenje generičkih
+ verzija kolekcija (što nije neophodno; tip kolekcije možete da zadate i
+ eksplicitno, u datoteci sa preslikavanjem).
+ Ovako izgleda tipični generički skup:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+private Set<String> slike = new HashSet<String>();
+\size footnotesize
+ 
+\end_layout
+
+\begin_layout Standard
+Hibernate zna kako da preslika kolekcije i za to koristi sledeće elemente:
+\end_layout
+
+\begin_layout Itemize
+Skup (
+\family typewriter
+\size small
+java.util.Set
+\family default
+\size default
+) se preslikava elementom <set>.
+ Kolekcija se inicijalizuje tipom java.util.HashSet.
+ Redosled dodavanja elemenata u skup se ne čuva, a duplikati nisu dozvoljeni.
+ Ovo je kolekcija koja se najčešće koristi u Hibernate aplikacijama.
+\end_layout
+
+\begin_layout Itemize
+Sortiran skup (
+\family typewriter
+\size small
+java.util.SortedSet
+\family default
+\size default
+) perslikava se elementom <set> u kome se atribut sortiranja zadaje komparatorom
+ ili prirodnim redosledom, u zavisnosti od tipa elemenata u skupu.
+ Kolekcija se inicijalizuje tipom 
+\family typewriter
+\size small
+java.util.TreeSet
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Itemize
+Lista (
+\family typewriter
+\size small
+java.util.List
+\family default
+\size default
+) se preslikava elementom <list>, uz čuvanje pozicije svakog elementa u
+ dodatnoj koloni index u tabeli kolekcije.
+ Lista se inicijalizuje tipom 
+\family typewriter
+\size small
+java.util.ArrayList
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Itemize
+Mapa (
+\family typewriter
+\size small
+java.util.Map
+\family default
+\size default
+) se preslikava elementom <map>, uz čuvanje parova ključ-vrednost.
+ Za inicijalizaciju se koristi tip 
+\family typewriter
+\size small
+java.util.HashMap
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Itemize
+Sortirana mapa (
+\family typewriter
+\size small
+java.util.SortedMap
+\family default
+\size default
+) se preslikava elementom <map>, pri čemu se atribut sortiranja zadaje komparato
+rom ili prirodnim redosledom, u zavisnosti od tipa mape.
+ Kolekcija je inicijalizuje tipom 
+\family typewriter
+\size small
+java.util.TreeMap
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Paragraph
+Preslikavanje skupova
+\end_layout
+
+\begin_layout Standard
+Najjednostavnija implementacija je skup imena datoteka tipa 
+\family typewriter
+\size small
+String
+\family default
+\size default
+, kao na sledećoj slici:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename set.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Prvo treba dodati svojstvo kolekcije u klasu 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+private Set<String> slike = new HashSet<String>(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public Set<String> getSlike() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+return this.slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public void setSlike(Set<String> slike) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+this.slike = slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Zatim treba dodati preslikavanje u XML datoteku klase 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<set name="slike" table="PROIZVOD_SLIKA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="PROIZVOD_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<element type="string" column="FILENAME" not-null="true"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</set> 
+\end_layout
+
+\begin_layout Standard
+Imena datoteka čuvaju se u tabeli kolekcije 
+\family typewriter
+\size small
+PROIZVOD_SLIKA
+\family default
+\size default
+.
+ Sa tačke gledišta baze podataka, ta tabela je poseban entitet, ali Hibernate
+ to od nas krije.
+ Element <key> deklariše polje koje služi kao spoljni ključ u tabeli kolekcije
+ i referencira primarni ključ 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ entiteta u kome se nalazi skup.
+ Pošto skup ne može da sadrži duplikate, primarni ključ kolekcije 
+\family typewriter
+\size small
+PROIZVOD_SLIKA
+\family default
+\size default
+ je složen i sastoji se od oba polja u deklaraciji <set>: 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+FILENAME
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Subsubsection*
+Preslikavanje liste
+\end_layout
+
+\begin_layout Standard
+Prvo je potrebno promeniti klasu 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+private List<String> slike = new ArrayList<String>(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public List<String> getSlike() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+return this.slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public void setSlike(List<String> slike) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+this.slike = slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Preslikavanje <list> zahteva dodavanje polja index u tabelu kolekcije.
+ Polje index definiše položaj elementa u kolekciji.
+ Na taj način Hibernate je u stanju da očuva redosled elemenata u kolekciji.
+ Preslikavanje je sledeće:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<list name="slike" table="PROIZVOD_SLIKA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="PROIZVOD_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<list-index column="POZICIJA"/>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<element type="string" column="FILENAME" not-null="true"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</list>
+\end_layout
+
+\begin_layout Standard
+Primarni ključ tabele kolekcije je složen od polja 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+POZICIJA
+\family default
+\size default
+.
+ Duplikati elemenata (
+\family typewriter
+\size small
+FILENAME
+\family default
+\size default
+) nisu dozvoljeni, što je u skladu sa semantikom liste.
+ Indeks perzistentne liste počinje od nule (to se može promeniti elementom
+ <list-index base="1".../>).
+ Hibernate dodaje null elemente u Java listu ako brojevi indeksa u bazi
+ podataka nisu kontinualni.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename list.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Preslikavanje mape
+\end_layout
+
+\begin_layout Standard
+Pretpostavimo sada da slike za proizvod osim imena datoteke imaju i nazive
+ koje su im dodelili korisnici.
+ Jedan od načina da se to modelira u Javi je mapa, pri čemu bi korisnički
+ nazivi bili ključevi, a imena datoteka vrednosti mape.
+ Java klasa se menja:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+private Map<String, String> slike = new HashMap<String, String>(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public Map<String, String> getSlike() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+return this.slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public void setSlike(Map<String, String> slike) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+this.slike = slike; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Preslikavanje mape je slično preslikavanju liste:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<map name="slike" table="PROIZVOD_SLIKA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="PROIZVOD_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<map-key column="IME_SLIKE" type="string"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<element type="string" column="FILENAME" not-null="true"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</map>
+\end_layout
+
+\begin_layout Standard
+Primarni ključ tabele kolekcije je složen od 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+IME_SLIKE
+\family default
+\size default
+.
+ Polje 
+\family typewriter
+\size small
+IME_SLIKE
+\family default
+\size default
+ sadrži ključeve mape.
+ Ni tu nisu dozvoljeni duplikati.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename map.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje kardinalnosti (multiplicity)
+\end_layout
+
+\begin_layout Standard
+Upravljanje vezama između klasa i relacijama između tabela je srce ORM sistema.
+ Pretpostavimo da želimo da modeliramo sledeću vezu:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename manytoone.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+U opisivanju i klasifikaciji asocijacija koristimo termin kardinalnost (multipli
+city).
+ U našem primeru, kardinalnost određuju dve informacije:
+\end_layout
+
+\begin_layout Itemize
+Može li biti više od jedne Aukcije za određen Proizvod?
+\end_layout
+
+\begin_layout Itemize
+Može li biti više Proizvoda za određenu Aukciju?
+\end_layout
+
+\begin_layout Standard
+Iz modela sa slike zaključujemo da je veza od Aukcije ka Proizvodu tipa
+ many-to-one, a obrnuta veza od Proizvoda ka Aukciji tipa one-to-many.
+ Postoje još dve mogućnosti: many-to-many i one-to-one, kojima se ovde nećemo
+ baviti jer se ređe sreću.
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje many-to-one
+\end_layout
+
+\begin_layout Standard
+Java implementacija klase Aukcija izgleda ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public class Aukcija { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private Proizvod proizvod; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public void setProizvod(Proizvod proizvod) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.proizvod = proizvod; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public Proizvod getProizvod() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return proizvod; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Hibernate preslikavanje za ovu vezu izgleda ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<class name="Aukcija" table="AUKCIJA"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<many-to-one name="proizvod" column="PROIZVOD_ID" 
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+class="Proizvod" not-null="true"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</class>
+\end_layout
+
+\begin_layout Standard
+Polje 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ u tabeli 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+ je spoljni ključ ka primarnom ključu tabele 
+\family typewriter
+\size small
+PROIZVOD
+\family default
+\size default
+.
+ Klasa 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ koja je cilj veze navedena je eksplicitno, ali to nije neophodno jer Hibernate
+ može da odredi tu klasu pomoću refleksije.
+ Atribut not-null je dodat zato što ne može da postoji aukcija bez proizvoda
+ (spoljni ključ 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ u tabeli 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+ ne može da bude NULL).
+\end_layout
+
+\begin_layout Standard
+Kako ćemo vezu između 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ učiniti dvosmernom? Želimo da budemo u stanju da lako stignemo do svih
+ aukcija za određeni proizvod bez eksplicitnog upita, tako što ćemo se kretati
+ kroz mrežu perzistentnih objekata.
+ Najlakše je to postići tako što će se u klasu 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ dodati kolekcija 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+public class Proizvod { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+private Set<Aukcija> aukcije = new HashSet<Aukcija>(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public void setAukcije(Set<Aukcija> aukcije) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+this.aukcije = aukcije; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public Set<Aukcija> getAukcije() { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+return aukcije; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+public void dodajAukciju(Aukcija aukcija) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+aukcija.setProizvod(this); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+aukcije.add(aukcija);
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+} 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+...
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Standard
+Osnovno preslikavanje za ovu vezu tipa one-to-many izgleda ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<class name="Proizvod" table="PROIZVOD"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<set name="aukcije"> <key column="PROIZVOD_ID"/>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<one-to-many class="Aukcija"/>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+</set>
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</class>
+\end_layout
+
+\begin_layout Standard
+Ako ovo preslikavanje uporedimo sa preslikavanjem skupa opisanom u ranijem
+ odeljku, primećujemo da se sadržaj kolekcije preslikava drugačijim elementom,
+ <one-to-many>.
+ To označava da kolekcija sadrži reference na instance nekog preslikanog
+ entiteta.
+ Preslikano polje definisano elementom <key> je spoljni ključ, tj.
+ polje 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ tabele 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+, što je isto polje koje je već preslikano sa druge strane veze.
+ Izgled tabela u bazi se nije promenio nakon dodavanja ovog preslikavanja
+ i izgeda ovako:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename aukcija.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Jedina razlika je što sada nedostaje atribut not null="true"; sada imamo
+ dve različite jednosmerne veze preslikane u isto polje koje sadrži spoljni
+ ključ.
+ Koja strana veze upravlja tim poljem? Tokom izvršavanja, ista vrednost
+ spoljašnjeg ključa u memoriji je predstavljena sa dve vrednosti: svojstvom
+ 
+\family typewriter
+\size small
+proizvod
+\family default
+\size default
+ klase 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ i elementom kolekcije 
+\family typewriter
+\size small
+aukcije
+\family default
+\size default
+ koja se nalazi u objektu 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+.
+ Pretpostavimo da aplikacija izmeni vezu, npr.
+ dodavanjem aukcije proizvodu:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+aukcija.setProizvod(proizvod); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+aukcije.add(aukcija);
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+U ovoj situaciji Hibernate prepoznaje dve izmene u različitim instancama
+ objekata koje treba perzistirati, a nalaze se u memoriji.
+ Sa tačke gledišta baze podataka, obe promene treba da se svedu na izmenu
+ polja 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ tabele 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+.
+ Hibernate nije u stanju da neprimetno registruje da se te dve izmene odnose
+ na isto polje u bazi, jer mu ništa u ovom trenutku ne govori da se radi
+ o dvosmernoj vezi.
+ Drugim rečima, isto polje je dvaput preslikano, bez obzira što je to urađeno
+ u dve različite datoteke.
+ Da bi se veza učinila dvosmernom, potrebno je dodati atribut 
+\family typewriter
+\size small
+inverse
+\family default
+\size default
+ kojim se označava da je kolekcija slika u ogledalu veze <many-to-one> sa
+ druge strane:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<class name="Proizvod" table="PROIZVOD"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<set name="aukcije" inverse="true"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="PROIZVOD_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<one-to-many class="Aukcija"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</set> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</class> 
+\end_layout
+
+\begin_layout Standard
+Bez atributa 
+\family typewriter
+\size small
+inverse
+\family default
+\size default
+ Hibernate pokušava da izvrši dve različite SQL naredbe koje menjaju isti
+ spoljni ključ.
+ Zadavanjem 
+\family typewriter
+\size small
+inverse="true" 
+\family default
+\size default
+eksplicitno se kaže koju stranu veze ne treba da sinhronizuje sa bazom podataka.
+ U ovom primeru, Hibernate će znati da u bazu podataka treba da pošalje
+ samo izmene koje su napravljene na strani veze kod 
+\family typewriter
+\size small
+Aukcije
+\family default
+\size default
+, i da zanemari promene u kolekciji aukcije.
+ Ako se u aplikaciji pozove 
+\family typewriter
+\size small
+proizvod.getAukcije().add(aukcija)
+\family default
+\size default
+, to se neće odraziti na bazu podataka! Ono što želimo da postignemo treba
+ da se uradi na drugoj strani: 
+\family typewriter
+\size small
+aukcija.setProizvod(proizvod)
+\family default
+\size default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Na opisan način napravili smo funkcionalnu dvosmernu vezu many-to-one.
+ Ako želimo da napravimo odnos roditelj-dete (parent/child), nedostaje nam
+ još nešto.
+\end_layout
+
+\begin_layout Subsubsection*
+Kaskadiranje stanja objekata
+\end_layout
+
+\begin_layout Standard
+Pojam roditelj-deca podrazumeva da jedan vodi računa o drugima.
+ Praktično, kada se pravilno implementira, upravljanje odnosom roditelj-deca
+ trebalo bi da zahteva manje koda jer veći deo posla treba da se obavlja
+ automatski.
+ Sledeći kod kreira nov 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ (roditelj) i novu instancu 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ (dete): 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Proizvod novProizvod = new Proizvod(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Aukcija novaAukcija = new Aukcija(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+novProizvod.addAukcija(novaAukcija); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.save(novProizvod); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.save(novaAukcija); 
+\end_layout
+
+\begin_layout Standard
+Drugi poziv metode 
+\family typewriter
+\size small
+session.save()
+\family default
+\size default
+ bi bio suvišan u slučaju prave veze roditelj-dete.
+ Kada instancirate nov objekat 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ i dodate ga 
+\family typewriter
+\size small
+Proizvodu
+\family default
+\size default
+, aukcija bi trebalo automatski da se perzistira, bez dodatne operacije
+ 
+\family typewriter
+\size small
+save()
+\family default
+\size default
+.
+ Da bi se to omogućilo, u XML mapiranje dodaje se opcija 
+\family typewriter
+\size small
+cascade
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<class name="Proizvod" table="PROIZVOD"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+...
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+<set name="aukcije" inverse="true" cascade="save-update"> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<key column="PROIZVOD_ID"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+<one-to-many class="Aukcija"/> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+</set> 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+</class>
+\end_layout
+
+\begin_layout Standard
+Atribut 
+\family typewriter
+\size small
+cascade="save-update"
+\family default
+\size default
+ omogućuje tranzitivnu perzistenciju za instance 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+, ako je određen objekat 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ referenciran u kolekciji perzistiranog 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+.
+ Atribut 
+\family typewriter
+\size small
+cascade
+\family default
+\size default
+ je usmeren, tj.
+ primenjuje se samo na jedan kraj veze.
+ Mogli biste da dodate i 
+\family typewriter
+\size small
+cascade="save-update"
+\family default
+\size default
+ u vezu <many-to-one> preslikavanja 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+, ali pošto se aukcije prave posle proizvoda, to nema smisla.
+\end_layout
+
+\begin_layout Standard
+Sada se kod koji povezuje i čuva 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Aukciju
+\family default
+\size default
+ može uprostiti:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Proizvod novProizvod = new Proizvod(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Aukcija novaAukcija = new Aukcija(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+novProizvod.addAukcija(novaAukcija); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.save(novProizvod); 
+\end_layout
+
+\begin_layout Standard
+Čini se razumnim da brisanje proizvoda za sobom povlači i brisanje svih
+ njegovih aukcija; to i označava kompozicija (popunjeni romb) u UML dijagramu.
+ Sa trenutnim podešavanjima, to bi zahtevalo pisanje sledećeg koda: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+for (Aukcija aukcija : item.getAukcije()) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+aukcija.remove(); // uklanjanje reference iz kolekcije 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+session.delete(aukcija); //uklanjanje iz baze podataka 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+} 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.delete(proizvod); // na kraju, brisanje proizvoda 
+\end_layout
+
+\begin_layout Standard
+Hibernate nudi opciju kaskadiranja i za ovu namenu: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+<set name="aukcije" inverse="true" cascade="save-update, delete"> ...
+\end_layout
+
+\begin_layout Standard
+Isti kod za brisanje proizvoda i svih njegovih aukcija se svodi na sledeće:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.delete(proizvod); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+entityManager.remove(proizvod);
+\end_layout
+
+\begin_layout Subsection*
+Preslikavanje many-to-many
+\end_layout
+
+\begin_layout Standard
+Opcija za preslikavanje veza tipa many-to-many kojom ćemo se ovde baviti
+ jeste uvođenje posebnog entiteta - međuklase.
+ Na primer, ako Kategorija ima skup Proizvoda, možemo napisati sledeće preslikav
+anje:
+\end_layout
+
+\begin_layout Standard
+<set name="items" table="CATEGORY_ITEM" cascade="save-update"> 
+\end_layout
+
+\begin_layout Standard
+<key column="CATEGORY_ID"/> 
+\end_layout
+
+\begin_layout Standard
+<many-to-many class="Item" column="ITEM_ID"/> 
+\end_layout
+
+\begin_layout Standard
+</set> 
+\end_layout
+
+\begin_layout Standard
+Međutabela veze (link ili association table) ima dva polja: spoljne ključeve
+ tabela KATEGORIJA i PROIZVOD.
+ Primarni ključ je kombinacija oba polja.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename manytomany.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Rad sa objektima
+\end_layout
+
+\begin_layout Standard
+Upiti (query) su najzanimljiviji deo rada u alatu Hibernate.
+ Pravilno pisanje složenog upita ponekad zahteva mnogo vremena, a njegov
+ uticaj na performanse može biti iznenađujuće veliki.
+ S druge strane, pisanje upita postaje mnogo lakše sa iskustvom, pa se nešto
+ što se na početku činilo teško rešava korišćenjem naprednih trikova.
+ Programeri koji su navikli da ručno pišu SQL ponekad su zabrinuti da će
+ im ORM alat oduzeti mogućnost izražavanja i fleksibilnost na koju su navikli
+ u jeziku SQL.
+ Međutim, to nije tako; snažne funkcije za pisanje upita u alatu Hibernate
+ omogućuju izvršavanje svih uobičajenih (ili neobičnih) SQL naredbi, ali
+ na objektno orijentisan način, uz korišćenje klasa i njihovih podataka
+ članova.
+ Hibernate podržava tri načina za izražavanje upita, od kojih ćemo se ovde
+ zadržati na objašnjenju prvog (HQL):
+\end_layout
+
+\begin_layout Itemize
+Hibernate Query Language (HQL): 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createQuery("from Kategorija k where k.ime like 'Laptop%'"); 
+\end_layout
+
+\begin_layout Itemize
+API za query by criteria (QBC) i query by example (QBE): 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createCriteria(Kategorija.class).add(Restrictions.like("ime", "Laptop%")
+ ); 
+\end_layout
+
+\begin_layout Itemize
+Direktan SQL sa automatskim preslikavanjem skupa rezultata u objekte, ili
+ bez njega: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createSQLQuery("select {k.*} from KATEGORIJA {c} where IME like 'Laptop%'"
+).
+\begin_inset Newline newline
+\end_inset
+
+addEntity("k", Kategorija.class);
+\end_layout
+
+\begin_layout Subsection*
+Priprema upita
+\end_layout
+
+\begin_layout Standard
+Da bi se napravila nova instanca Hibernate objekta 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+, može se pozvati metoda 
+\family typewriter
+\size small
+createQuery()
+\family default
+\size default
+ ili 
+\family typewriter
+\size small
+createSQLQuery()
+\family default
+\size default
+ objekta 
+\family typewriter
+\size small
+Session
+\family default
+\size default
+.
+ Metoda 
+\family typewriter
+\size small
+createQuery()
+\family default
+\size default
+ priprema HQL upit: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Query hqlQuery = session.createQuery("from Korisnik");
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Hibernate vraća nov objekat 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ koji se može iskoristiti za zadavanje tačnog načina izvršavanja upita.
+ Zasad u bazu podataka nije poslata nijedna SQL naredba.
+\end_layout
+
+\begin_layout Standard
+Često korišćena tehnika je paginacija resultata.
+ Korisnicima se rezultati zadate pretrage (na primer, određenih 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+) prikazuju na strani koja prima ograničen podskup rezultata (recimo, 10),
+ a korisnici zatim ručno idu napred i nazad.
+ Hibernate interfejs 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ podržava paginaciju rezultata:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Query query = session.createQuery("from Korisnik k order by k.name asc");
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+query.setMaxResults(10);
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Poziv metode 
+\family typewriter
+\size small
+setMaxResults(10)
+\family default
+\size default
+ ograničava skup rezultata upita na prvih deset objekata (zapisa) koje vraća
+ baza podataka.
+ Primetite da ne postoji standardan način za izražavanje paginacije u jeziku
+ SQL, ali Hibernate zna trikove kojima to postiže za svaku pojedinačnu bazu
+ podataka.
+\end_layout
+
+\begin_layout Standard
+Hibernate takođe podržava povezivanje parametara tokom izvršavanja upita
+ (runtime binding).
+ Kada ono ne bi postojalo, morali bismo da pišemo sledeći kod:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String queryString = "from Proizvod p where p.opis like '" + search + "'";
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+List result = session.createQuery(queryString).list(); 
+\end_layout
+
+\begin_layout Standard
+Osim što je ružan, ovakav kod ne bi trebalo nikad pisati zato što bi zlonamerni
+ korisnik mogao da u kao vrednost za pretragu opisa proizvoda unese 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+foo' and pozoviNekuProceduru() and 'bar' = 'bar
+\end_layout
+
+\begin_layout Standard
+Ako napišete upit sličan ovome, otvarate veliku rupu u bezbednosti aplikacije
+ zato što omogućujete izvršavanje proizvoljnog koda u bazi podataka.
+ Ovaj bezbednosni propust zove se 
+\shape italic
+SQL injection
+\shape default
+, no srećom postoji jednostavna tehnika kojom se izbegava.
+ Hibernate podržava tehniku imenovanih parametara (named parameters):
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String queryString = "from Item item where item.description like :search";
+\end_layout
+
+\begin_layout Standard
+Dvotačka iza naziva parametra označava imenovani parametar.
+ Zatim treba povezati vrednost sa parametrom 
+\family typewriter
+\size small
+search
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Query q = session.createQuery(queryString).
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+setString("search", searchString); 
+\end_layout
+
+\begin_layout Standard
+Pošto je 
+\family typewriter
+\size small
+searchString
+\family default
+\size default
+ string promenljiva kojoj vrednost dodeljuje korisnik, može se pozvati metoda
+ 
+\family typewriter
+\size small
+setString()
+\family default
+\size default
+ interfejsa 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ da bi se ona povezala sa imenovanim parametrom (
+\family typewriter
+\size small
+:search
+\family default
+\size default
+).
+ Ovaj kod je čistiji, mnogo bezbedniji i efikasniji jer se kompajlirana
+ SQL naredba može ponovo iskoristiti ako se u njoj promene samo povezani
+ parametri.
+ 
+\end_layout
+
+\begin_layout Standard
+Interfejs 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ osim metode 
+\family typewriter
+\size small
+setString()
+\family default
+\size default
+ nudi slične korisne metode za povezivanje argumenata većine tipova koje
+ Hibernate podržava: od 
+\family typewriter
+\size small
+setInteger()
+\family default
+\size default
+ preko 
+\family typewriter
+\size small
+setTimestamp()
+\family default
+\size default
+ do 
+\family typewriter
+\size small
+setLocale()
+\family default
+\size default
+.
+ Korišćenje ovih metoda nije obavezno, jer se uvek možete osloniti na to
+ da će opšta metoda 
+\family typewriter
+\size small
+setParameter()
+\family default
+\size default
+ automatski prepoznati tip parametra.
+ Posebno koristan metod je 
+\family typewriter
+\size small
+setEntity()
+\family default
+\size default
+, koji omogućuje korišćenje nekog perzistentnog entiteta (preslikane klase):
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createQuery("from Proizvod proizvod where proizvod.prodavac = :prodavac").
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+setEntity("prodavac", instancaProdavca);
+\end_layout
+
+\begin_layout Standard
+Često se pojavljuju i upiti sa više imenovanih parametara: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+String queryString = "from Item item" + " where item.description like :search"
+ + " and item.date > :minDate"; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Query q = session.createQuery(queryString).
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+setString("search", searchString).setDate("minDate", mDate);
+\end_layout
+
+\begin_layout Standard
+Metode za povezivanje parametara interfejsa 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+ su null-bezbedne.
+ Zbog toga se može slobodno napisati sledeća naredba: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createQuery("from Korisnik as k where k.korisnickoIme = :ime").setString("i
+me", null); 
+\end_layout
+
+\begin_layout Standard
+Međutim, rezultat ovog koda skoro sigurno nije ono što smo želeli da postignemo.
+ Dobijeni SQL kod će sadržati poređenje tipa 
+\family typewriter
+\size small
+KORISNICKO_IME = null
+\family default
+\size default
+, što uvek daje null u SQL logici.
+ Zato umesto toga treba da se koristi null operator: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+session.createQuery("from Korisnik as k where k.korisnickoIme is null");
+\end_layout
+
+\begin_layout Subsection*
+Izvršavanje upita
+\end_layout
+
+\begin_layout Standard
+Pošto smo pripremili objekat 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+, upit je spreman za izvršavanje da bi se rezultati učitali u memoriju.
+ Postupak smeštanja celog skupa rezultata u memoriju nazivamo listanje.
+ Za izvršavanje upita najčešće se koristi metoda 
+\family typewriter
+\size small
+list()
+\family default
+\size default
+ interfejsa 
+\family typewriter
+\size small
+Query
+\family default
+\size default
+; ona vraća rezultate kao 
+\family typewriter
+\size small
+java.util.List
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+List result = myQuery.list();
+\end_layout
+
+\begin_layout Standard
+U nekim slučajevima znamo da će rezultat upita biti samo jedna instanca,
+ npr.
+ ako tražimo aukciju sa najvišom cenom za određeni proizvod.
+ U tom slučaju treba koristiti metodu 
+\family typewriter
+\size small
+uniqueResult()
+\family default
+\size default
+: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Aukcija maxAukcija = (Aukcija) session.createQuery("from Aukcija a order
+ by a.iznos desc").setMaxResults(1).uniqueResult(); 
+\end_layout
+
+\begin_layout Standard
+Ako upit vrati više od jednog objekta, biće bačen izuzetak, a ako ne nađe
+ ništa, metoda će vratiti null.
+\end_layout
+
+\begin_layout Subsection*
+Osnovni HQL upiti
+\end_layout
+
+\begin_layout Paragraph*
+Izbor
+\end_layout
+
+\begin_layout Standard
+Najjednostavniji HQL upit je izbor iz jedne perzistentne klase: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Ovaj upit generiše sledeći SQL: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select p.PROIZVOD_ID, p.IME, p.OPIS, ...
+ from PROIZVOD p
+\end_layout
+
+\begin_layout Standard
+Obično se u naredbi izbora dodeljuje alijas klasi koja se koristi da bi
+ se on referencirao u drugim delovima upita:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod as proizvod
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Ključna reč as je uvek opciona, pa je prethodni upit isti kao: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod proizvod
+\end_layout
+
+\begin_layout Paragraph*
+Ograničenja
+\end_layout
+
+\begin_layout Standard
+Obično ne tražimo sve instance određene klase, već zadajemo određena ograničenja
+ za objekte koje upit treba da vrati; za to se koristi klauzula WHERE.
+ Tipična klauzula WHERE koja ograničava rezultate izgleda ovako:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k where k.email = 'user@hibernate.org' 
+\end_layout
+
+\begin_layout Standard
+Primetite da se ograničenje za email izražava u terminima podatka člana
+ klase 
+\family typewriter
+\size small
+Korisnik
+\family default
+\size default
+ (u ovom slučaju to je 
+\family typewriter
+\size small
+email
+\family default
+\size default
+) i da se pri tom koristi objektno orijentisana notacija.
+ SQL koji generiše ovaj upit je
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select k.KORISNIK_ID, k.IME, k.PREZIME, k.KORISNICKO_IME, k.EMAIL from KORISNIK
+ k where k.EMAIL = 'user@hibernate.org' 
+\end_layout
+
+\begin_layout Standard
+U izraze se mogu uključiti konstante navedene pod apostrofima.
+ Često korišćene konstante u HQL-u su TRUE and FALSE: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p where p.aktivan = true
+\end_layout
+
+\begin_layout Standard
+HQL podržava osnovne operatore za poređenje kao SQL, na primer:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Aukcija a where a.iznos between 1 and 10 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Aukcija a where a.iznos > 100 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k where k.email in ('foo@bar', 'bar@foo')
+\end_layout
+
+\begin_layout Standard
+Pošto SQL baze podataka implementiraju ternarnu logiku
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Zapis se uključuje u SQL skup rezultata ako i samo ako WHERE klauzula ima
+ vrednost true.
+ U Javi, notNullObjekat==null daje false, a null==null vraća true.
+ U SQL-u, NOT_NULL_POLJE= null i null=null vraćaju null, a ne true.
+ Zbog te tzv.
+ ternarne logike SQL podržava poseban operator, IS NULL, koji služi za testiranj
+e da li je određena vrednost null.
+\end_layout
+
+\end_inset
+
+, provera null vrednosti zahteva posebnu pažnju.
+ HQL podržava operator IS [NOT] NULL: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k where k.email is null //daje sve korisnike koji nemaju email
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p where p.uspesnaAukcija is not null //vraća sve prodate proizvode
+\end_layout
+
+\begin_layout Standard
+Operator [NOT] LIKE podržava korišćenje džoker znakova, koji su isti kao
+ u SQL-u: % i _ (procenat zamenjuje proizvoljan niz znakova, a _ jedan znak).
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k where k.ime like 'G%'
+\end_layout
+
+\begin_layout Standard
+Logički operatori (i zagrade za grupisanje) koriste se za kombinovanje izraza:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k where (k.ime like 'G%' and k.prezime like 'K%' ) or k.email
+ in ('foo@hibernate.org', 'bar@hibernate.org')
+\end_layout
+
+\begin_layout Standard
+HQL podržava i upite sa kolekcijama, na primer:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p where p.aukcije is not empty 
+\end_layout
+
+\begin_layout Standard
+Ovaj upit vraća sve instance 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ koje u svojoj kolekciji aukcije imaju elemente.
+ Ovako se izražava zahteva da određeni element bude u kolekciji:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p, Kategorija k where p.id = '123' and p member of k.proizvodi
+ 
+\end_layout
+
+\begin_layout Standard
+Ovaj upit vraća instancu 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ sa primarnim ključem '123' i sve instance 
+\family typewriter
+\size small
+Kategorija
+\family default
+\size default
+ sa kojim je taj proizvod povezan.
+ 
+\end_layout
+
+\begin_layout Standard
+HQL podržava i pozivanje SQL funkcija; tipičan primer je izraz koji sadrži
+ veličinu kolekcije:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p where size(p.aukcije) > 3
+\end_layout
+
+\begin_layout Paragraph*
+Uređivanje rezultata upita
+\end_layout
+
+\begin_layout Standard
+HQL podržava klauzulu ORDER BY, slično kao SQL.
+ Sledeći upit vraća sve korisnike poređane po korisničkim imenima:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k order by k.korisnickoIme
+\family default
+\size default
+ 
+\end_layout
+
+\begin_layout Standard
+Rastući ili opadajući redosled označava se sa asc ili desc: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k order by k.korisnickoIme desc 
+\end_layout
+
+\begin_layout Standard
+Može se uređivati i po nekoliko svojstava: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Korisnik k order by k.prezime asc, k.ime asc
+\end_layout
+
+\begin_layout Paragraph*
+Eliminisanje duplikata
+\end_layout
+
+\begin_layout Standard
+Ako znamo da u bazi postoje duplikati zapisa, upotrebićemo ključnu reč distinct:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select distinct proizvod.opis from Proizvod proizvod 
+\end_layout
+
+\begin_layout Standard
+Ovim upitom eliminisaćemo duplikate iz liste opisa 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+.
+\end_layout
+
+\begin_layout Paragraph*
+Projekcija
+\end_layout
+
+\begin_layout Standard
+Razmotrimo sledeći Hibernate upit:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p, Aukcija a
+\end_layout
+
+\begin_layout Standard
+Ovaj upit daje uređene parove instanci 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ kao listu 
+\family typewriter
+\size small
+Object[]
+\family default
+\size default
+.
+ Na poziciji 0 je 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+, a indeks 1 je 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+.
+ Pošto se radi o Dekartovom proizvodu tabela, rezultat sadrži sve moguće
+ kombinacije zapisa 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+.
+ Očigledno je da takav upit nije naročito koristan.
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Query q = session.createQuery("from Proizvod p, Aukcija a"); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+Iterator parovi = q.list().iterator(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+while (parovi.hasNext() ) { 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Object[] par = (Object[]) parovi.next(); 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Proizvod proizvod = (Proizvod) par[0]; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+\begin_inset space \qquad{}
+\end_inset
+
+Aukcija a = (Aukcija) par[1]; 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+}
+\end_layout
+
+\begin_layout Paragraph*
+Join
+\end_layout
+
+\begin_layout Standard
+Mogućnost spajanje podataka iz različitih tabela je jedna od osnovnih prednosti
+ relacionog modela podataka.
+ Spajanje (join) takođe omogućuje dohvatanje nekoliko povezanih objekata
+ i kolekcija u jednom upitu.
+ Join se koristi za kombinovanje podataka u dve (ili više) relacija.
+ Na primer, mogu se kombinovati podaci iz tabela 
+\family typewriter
+\size small
+PROIZVOD
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+ kao što je prikazano na slici.
+ 
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename proizvodAukcija.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Ono što se najčešće podrazumeva kada se pomene join u kontekstu SQL baza
+ podataka je tzv.
+ 
+\shape italic
+(levi) inner join
+\shape default
+ koji je najvažniji od svih tipova kombinovanja i najlakši za razumevanje.
+ Ako spojite tabele 
+\family typewriter
+\size small
+PROIZVOD
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+ koristeći 
+\shape italic
+inner join
+\shape default
+, uz korišćenje njihovih zajedničkih atributa (polja 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+), dobićete proizvode i aukcije u novoj tabeli sa rezultatima koja će sadržati
+ samo proizvode za koje postoje aukcije.
+ 
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename innerjoin.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Ako želite sve proizvode uz NULL vrednosti u slučajevima kada nema odgovarajućih
+ aukcija, upotrebićete 
+\shape italic
+(levi) outer join
+\shape default
+.
+ U tom slučaju, svaki red u (levoj) tabeli 
+\family typewriter
+\size small
+PROIZVOD
+\family default
+\size default
+ koji ne zadovoljava uslov spajanja takođe će biti uključen u rezultat,
+ sa NULL vrednostima svih kolona tabele 
+\family typewriter
+\size small
+AUKCIJA
+\family default
+\size default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename leftouterjoin.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Desni outer join pronalazi sve aukcije i null ako aukcija nema proizvoda,
+ a takav upit u ovom slučaju nema smisla.
+ 
+\shape italic
+Desni outer join
+\shape default
+ se retko koristi jer programeri uvek razmišljaju sleva udesno i tabelu
+ koja upravlja upitom stavljaju na početak.
+\end_layout
+
+\begin_layout Standard
+U nastavku ćemo se pozabaviti različitim načinima kako se može izraziti
+ join u alatu Hibernate.
+\end_layout
+
+\begin_layout Paragraph*
+Implicitni join
+\end_layout
+
+\begin_layout Standard
+Razmotrimo sledeći HQL:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Aukcija aukcija where aukcija.proizvod.opis like '%Foo%' 
+\end_layout
+
+\begin_layout Standard
+Ovakim upitom se kreira implicitni join u vezama tipa many-to-one kao što
+ je veza između 
+\family typewriter
+\size small
+Aukcije
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+.
+ Hibernate zna da smo tu vezu preslikali pomoću spoljnjeg ključa 
+\family typewriter
+\size small
+PROIZVOD_ID
+\family default
+\size default
+ u tabeli aukcija i generiše odgovarajući SQL join.
+ Implicitni join nikada ne koristi smer od kolekcije (tj.
+ ne može da se napiše 
+\family typewriter
+\size small
+proizvod.aukcije.iznos
+\family default
+\size default
+).
+\end_layout
+
+\begin_layout Standard
+Višestruki join je moguć u jednom izrazu.
+ Zamislimo za trenutak da je veza između 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Kategorije
+\family default
+\size default
+ tipa many-to-one (umesto many-to-many kakva je zaista), odnosno da proizvod
+ može da pripada samo jednoj kategoriji.
+ Tada bismo mogli da napišemo sledeći upit:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Aukcija aukcija where aukcija.proizvod.kategorija.ime like 'Laptop%' 
+\end_layout
+
+\begin_layout Standard
+Ili, na primer, sledeći upit: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Aukcija aukcija where aukcija.proizvod.kategorija.ime like 'Laptop%' and
+ aukcija.proizvod.uspesnaAukcija.iznos > 100 
+\end_layout
+
+\begin_layout Standard
+Pošto je broj joina veoma važan za performanse upita, zapitajmo se kako
+ bismo ovaj upit izrazili u jeziku SQL i koliko bi joina on imao? Odgovor
+ na ovo pitanje zahtevao bi izvesno vreme:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select ...
+ from AUKCIJA A inner join PROIZVOD P on A.PROIZVOD_ID = P.PROIZVOD_ID inner
+ join KATEGORIJA K on P.KATEGORIJA_ID = K.KATEGORIJA_ID inner join AUKCIJA
+ AU on P.USPESNA_AUKCIJA_ID = AU.AUKCIJA_ID where K.IME like 'Laptop%' and
+ AU.IZNOS > 100
+\end_layout
+
+\begin_layout Paragraph*
+Join izražen u klauzuli FROM
+\end_layout
+
+\begin_layout Standard
+Pretpostavimo da pravimo upit nad 
+\family typewriter
+\size small
+Proizvodima
+\family default
+\size default
+.
+ Dva su razloga zbog kojih bismo želeli da ga kombinujemo sa 
+\family typewriter
+\size small
+Aukcijama
+\family default
+\size default
+.
+ Možda želimo da ograničimo proizvode koje upit vraća na osnovu nekog kriterijum
+a koji bi se primenio na njihove aukcije.
+ Na primer, možda nam trebaju svi 
+\family typewriter
+\size small
+Proizvodi
+\family default
+\size default
+ čije su cene na aukciji prešle 100 USD; to bi zahtevalo inner join.
+ U tom slučaju nismo zainteresovani za proizvode koji nemaju aukcije.
+ S druge strane, možemo u principu biti zainteresovani za 
+\family typewriter
+\size small
+Proizvode
+\family default
+\size default
+, ali nam treba outer join zato što želimo da dobijemo sve 
+\family typewriter
+\size small
+Aukcije
+\family default
+\size default
+ za 
+\family typewriter
+\size small
+Proizvode
+\family default
+\size default
+ u istoj SQL naredbi.
+\end_layout
+
+\begin_layout Standard
+U prvom slučaju, upotrebićemo inner join za dobijanje instanci 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ i ograničavanje na proizvode čija je cena na aukciji premašila određen
+ iznos: 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p join p.aukcije a where p.opis like '%Foo%' and a.iznos > 100
+ 
+\end_layout
+
+\begin_layout Standard
+Ovaj upit dodeljuje alijas 
+\family typewriter
+\size small
+p
+\family default
+\size default
+ entitetu 
+\family typewriter
+\size small
+Proizvod
+\family default
+\size default
+ i alijas 
+\family typewriter
+\size small
+b
+\family default
+\size default
+ pridruženim aukcijama.
+ Zatim se oba alijasa koriste za izražavanje ograničenja u klauzuli WHERE.
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+from Proizvod p join p.aukcije a
+\end_layout
+
+\begin_layout Standard
+Ovaj upit vraća sve kombinacije pridruženih 
+\family typewriter
+\size small
+Aukcija
+\family default
+\size default
+ i 
+\family typewriter
+\size small
+Proizvoda
+\family default
+\size default
+ kao uređenih parova.
+ Ako ne želimo 
+\family typewriter
+\size small
+Aukcije
+\family default
+\size default
+ u rezultatima upita, zadaćemo klauzulu SELECT uz alijas koja će projektovati
+ samo objekte koje želimo:
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select p from Proizvod p join p.aukcije a where p.opis like '%Foo%' and a.iznos
+ > 100
+\end_layout
+
+\begin_layout Standard
+HQL nudi i alternativnu sintaksu za join kolekcija u FROM klauzuli i dodeljivanj
+e alijasa; to je operator IN():
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+\size small
+select p from Proizvod p in(p.aukcije) a where p.opis like '%Foo%' and a.iznos
+ > 100 
+\end_layout
+
+\end_body
+\end_document

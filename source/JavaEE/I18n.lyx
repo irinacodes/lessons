@@ -1,0 +1,1327 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language serbian-latin
+\language_package default
+\inputencoding UTF8
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Java i internacionalizacija (I18n)
+\end_layout
+
+\begin_layout Standard
+Datumi, vremena, valute, čak i decimalni brojevi, različito se formatiraju
+ i prikazuju u različitim delovima sveta.
+ Zbog toga je potreban jednostavan način za podešavanje menija, natpisa
+ na dugmadima, poruka o greškama i prečica sa tastature u različitim jezicima.
+ Promene u interfejsu aplikacije projektovane tako da podržava internacionalizac
+iju treba da budu pokrenute na osnovu informacija koje ona dobija od računara
+ na kome se izvršava.
+ Javin SDK nudi alate za internacionalizaciju aplikacija u smislu lokalizovanja
+ prikaza datuma i vremena, brojeva i teksta, grafičkih interfejsa.
+\end_layout
+
+\begin_layout Standard
+Java je prvi programski jezik od početka projektovan tako da podrži internaciona
+lizaciju.
+ To je bilo moguće zato što podržava Unicode u radu sa stringovima.
+ Da bi se razumela internacionalizacija, mora se prvo razumeti šta je to
+ Unicode.
+\end_layout
+
+\begin_layout Subsection
+Unicode i kodiranje znakova
+\end_layout
+
+\begin_layout Standard
+U doba kada su se pojavili UNIX i jezik C, prikaz znakova je bio vrlo jednostava
+n.
+ U računarstvu je bila bitna samo engleska abeceda, za koju je postojao
+ ASCII kod, te se svaki znak engleske abecede predstavljao brojem između
+ 32 i 127.
+ Tako je kod za razmak bio 32, za slovo 
+\shape italic
+A
+\shape default
+ 65 itd.
+ Postojeći kodovi znakova mogli su se bez problema smestiti u 7 bitova.
+ Pošto je većina tadašnjih računara koristila osmobitne reči, ne samo da
+ se u njih mogao smestiti čitav znak, već je postojao još i bit viška, koji
+ se mogao upotrebiti za razne svrhe.
+ Kodovi ispod 32 korišćeni su za tzv.
+ kontrolne znake (npr.
+ kod 12 je služio za izbacivanje papira iz štampača i uzimanje novog, a
+ 13 za prelazak u novi red).
+ Ovaj sistem je funkcionisao pod uslovom da se koristio engleski jezik.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename ascii.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pošto u bajtu ima mesta za osam bitova, mnogi su došli na ideju da slobodne
+ kodove od 128 do 255 koriste u sopstvene svrhe.
+ Problem je nastao zato što je mnogo ljudi došlo tu ideju istovremeno.
+ IBM-PC je koristio tzv.
+ OEM skup znakova u kome se našlo mesta za određena akcentovana slova iz
+ evropskih jezika i znakove za crtanje linija:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename oem.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Ove linije mogle su se koristiti za iscrtavanje okvira i crta na ekranu
+ računara.
+ Čim su PC računari osvojili tržište izvan SAD, počeli su da se pojavljuju
+ različiti skupovi OEM znakova, u kojima se gornjih 128 znakova koristilo
+ za različite namene.
+ Često se dešavalo da u nekim jezicima postoji više varijanti korišćenja
+ gornjih 128 kodova; npr.
+ dokumenti na ruskom jeziku nisu mogli pouzdano da se razmenjuju.
+\end_layout
+
+\begin_layout Standard
+Da bi se rešio problem različitog kodiranja viših 128 kodova, OEM je standardizo
+van.
+ Po tom standardu, u donjih 128 kodova zadržan je ASCII kod, ali je u zavisnosti
+ od lokacije standardizovano šta će se raditi sa gornjih 128.
+ Ti standardizovani kodovi nazvani su kodne strane (code page).
+ Tako je npr.
+ za ćirilicu korišćena kodna strana 855, a za našu latinicu 852.
+ U kodnim stranama svi znaci izvan engleske abecede kodirani su vrednostima
+ većim od 128.
+ Međutim, bilo je potpuno nemoguće na istom računaru prikazivati npr.
+ ćirilični i latinični tekst, jer su korišćene posebne kodne strane sa različiti
+m tumačenjima viših kodova.
+\end_layout
+
+\begin_layout Standard
+U Aziji je stanje sa kodiranjem bilo još haotičnije jer azijski jezici imaju
+ na hiljade znakova koji nikako ne mogu da se smeste u osam bitova.
+ Azijski problem se rešavao konfuznim sistemom nazvanim DBCS (double byte
+ character set) u kome je za kodiranje nekih znakova korišćen jedan bajt,
+ a za druge dva.
+ String se lako tumačio unapred, ali nikako unazad.
+ Programerima se preporučivalo da ne koriste naredbe s++ i s-- za kretanje
+ kroz stringove, već da umesto toga pozivaju Windowsove funkcije AnsiNext
+ i AnsiPrev koje su nekako izlazile na kraj sa celom zbrkom.
+\end_layout
+
+\begin_layout Standard
+Ipak, većina programera se i dalje pretvarala da je jedan bajt znak, i dogod
+ se nije pojavila potreba da se string prenosi sa jednog računara na drugi,
+ ili da program 
+\begin_inset Quotes eld
+\end_inset
+
+progovori
+\begin_inset Quotes erd
+\end_inset
+
+ nekim drugim jezikom, takav pristup se mogao tolerisati.
+ Međutim, kada se pojavio Internet, prenošenje stringova postalo je svakodnevica
+, a problemi sa kodiranjem znakova više se nisu mogli olako zanemarivati.
+\end_layout
+
+\begin_layout Standard
+Standard Unicode uveden je sa ciljem da se ustanovi jedinstven skup znakova
+ koji će podržavati sve postojeće sisteme pisanja.
+ Često se može čuti pogrešno tumačenje da je Unicode 16-bitni kod za znakove,
+ tj.
+ način predstavljanja znakova u kome svaki znak zauzima dva bajta, pa prema
+ tome Unicode može da kodira najviše 65.536 znakova.
+ To nije tačno.
+ 
+\end_layout
+
+\begin_layout Standard
+Dosad smo pretpostavljali da znak odgovara nekoj kombinaciji bitova koji
+ se smeštaju u memoriju ili na disk, npr.
+ u ASCII kodu slovo A se čuvalo kao bajt 0100 0001.
+ U standardu Unicode svaki znak ima sopstvenu kodnu tačku (code point).
+ Kodna tačka je u suštini teorijski pojam, jer Unicode ne kaže ništa o tome
+ kako će ona biti sačuvana u memoriji ili na disku.
+ Kodna tačka se piše ovako: U+0639, gde U+ znači "Unicode", a brojevi su
+ heksadecimalni.
+ Kodna tačka slova 
+\shape italic
+A
+\shape default
+ je U+0041, a našeg slova 
+\shape italic
+Č
+\shape default
+ je U+014C.
+ Unicode bilo kog znaka može da se pronađe pomoću Windowsovog programa charmap
+ ili na adresi www.unicode.org.
+ Ne postoji nikakvo ograničenje broja znakova koje Unicode može da predstavi;
+ broj znakova koji su već predstavljeni odavno je prešao 65.536, što znači
+ da ne može svaki Unicode znak da se kodira sa dva bajta, kao što se često
+ pogrešno veruje.
+ 
+\end_layout
+
+\begin_layout Standard
+Na primer, string 
+\shape italic
+Java
+\shape default
+ bi u Unicode standardu odgovarao sledećoj kombinaciji kodnih tačaka:
+\end_layout
+
+\begin_layout Standard
+U+004A U+0061 U+0076 U+0061
+\end_layout
+
+\begin_layout Standard
+Za čuvanje Unicode kodnih tačaka koriste se različiti sistemi kodiranja.
+ Prva ideja za Unicode kodiranje, koja je i dovela do uobičajene zablude
+ o dva bajta za Unicode, bila je da se brojevi u kodnim tačkama predstave
+ sa po dva bajta.
+ Tako bi string 
+\shape italic
+Java
+\shape default
+ postao:
+\end_layout
+
+\begin_layout Standard
+00 4A 00 61 00 76 00 61 00
+\end_layout
+
+\begin_layout Standard
+Međutim, isti string mogao bi da se predstavi i kao:
+\end_layout
+
+\begin_layout Standard
+4A 00 61 00 76 00 61 00
+\end_layout
+
+\begin_layout Standard
+Tehnički, oba pristupa su izvodljiva, pa se u ranim implementacijama Unicode
+ standarda moglo birati da li će Unicode kodne tačke biti predstavljene
+ na high-endian ili low-endian način
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Pretpostavimo da radimo sa dva bajta; oni se u memoriji mogu sačuvati tako
+ da prvi bajt sadrži bitove veće težine (to je tzv.
+ big-endian metod), ili bitove manje težine (tzv.
+ little-endian method).
+ Različiti procesori koriste različit pristup; npr.
+ SPARC koristi big-endian, a Pentium little-endian metod.
+ U Javi se sve vrednosti čuvaju kao big-endian, nezavisno od procesora,
+ što čini Javine fajlove platformski nezavisnim.
+\end_layout
+
+\end_inset
+
+, u zavisnosti od toga koji je bio brži na konkretnom procesoru.
+ Tako su se odmah pojavila dva načina da se sačuva Unicode, što nije bilo
+ od koristi u rešavanju opšte zbrke sa kodiranjima.
+ Da bi se ova dva pristupa Unicode kodiranju razlikovala, uveden je tzv.
+ Unicode Byte Order Mark, tj.
+ oznaka metoda prikaza (FE FF za little-endian, odnosno FF FE za big-endian).
+ Izvesno vreme činilo se da bi to moglo da bude prihvatljivo, ali su programeri,
+ a naročito oni čiji je maternji jezik engleski, počeli da se žale.
+ Naročito su im smetale brojne nule u kodu engleskog teksta, u kome se retko
+ koriste kodne tačke iznad U+00FF.
+ Zbog toga je većina programera rešila da zanemari Unicode nekoliko godina,
+ a u međuvremenu se stanje dodatno pogoršavalo.
+\end_layout
+
+\begin_layout Standard
+Rešenje problema predstavljanja Unicode kodnih tačaka dobijeno je uvođenjem
+ kodiranja UTF-8.
+ U sistemu UTF-8, sve kodne tačke od 0 do 127 čuvaju se kao jedan bajt,
+ dok se kodne tačke iznad 128 čuvaju u 2, 3, ili čak 6 bajtova.
+ 
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename utf8.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Koristan sporedni efekat ovog sistema jeste da tekst na engleskom kodiran
+ kao UTF-8 izgleda isto kao u ASCII kodu, pa se u engleskom razlika između
+ ova dva kodiranja ne primećuje.
+ Na primer, string 
+\shape italic
+Java
+\shape default
+, čije su kodne tačke U+004A U+0061 U+0076 U+0061, biće sačuvan kao 4A 61
+ 76 61 (po jedan bajt za svako slovo), što je isto kao u ASCII, ANSI, ili
+ bilo kom postojećem OEM kodiranju.
+ Međutim, ako upotrebite srpsku azbuku, biće potrebna po dva bajta za predstavlj
+anje jedne kodne tačke (to je i razlog zbog koga ako npr.
+ u SMS poruci koristite 
+\begin_inset Quotes eld
+\end_inset
+
+naša
+\begin_inset Quotes erd
+\end_inset
+
+ slova, u nju staje mnogo manje od uobičajenih 160 znakova).
+ 
+\end_layout
+
+\begin_layout Standard
+Dosad smo već pomenuli tri načina za Unicode kodiranje.
+ Standardni načini čuvanja u obliku dva bajta zovu se UTF-16 (zato što imaju
+ 16 bitova) ili prosto Unicode, ali i dalje treba znati da li je reč o high-endi
+an ili low-endian rasporedu.
+ Treći je popularan standard UTF-8 koji ima tu srećnu okolnost da radi neprimetn
+o i u slučaju engleskog teksta i starih programa koji nemaju pojma da na
+ svetu postoji još nešto osim ASCII koda.
+ Postoji još nekoliko manje rasprostranjenih načina za Unicode kodiranje
+ (npr.
+ UTF-7 ili UTF-32) kojima se zbog ograničenog prostora i značaja ovde nećemo
+ baviti.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename encodings.png
+	scale 70
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Unicode kodne tačke mogu se predstaviti i u bilo kom postojećem sistemu
+ kodiranja znakova.
+ Tako bi se Unicode string mogao kodirati ASCII, OEM srpskim ili hebrejskim
+ ANSI kodiranjem, doduše sa jednim nedostatkom: neki znakovi možda se ne
+ bi prikazali.
+ Ako u kodiranju koje se koristi ne postoji ekvivalent za Unicode kodnu
+ tačku, obično se umesto tog znaka pojavljuje znak pitanja ili romb.
+ Postoje na stotine uobičajenih kodiranja koja ispravno kodiraju samo neke
+ kodne tačke, a sve druge prikazuju kao znakove pitanja.
+ Za tekstove na engleskom popularno kodiranje je ISO-8859-1 (Latin-1 ili
+ ANSI).
+ Pokušate li međutim da kodirate srpski ili grčki u tim kodiranjima, dobićete
+ mnoštvo znakova pitanja.
+ Sva UTF kodiranja (8, 16 i 32) imaju dobru osobinu da sve Unicode kodne
+ tačke čuvaju ispravno.
+\end_layout
+
+\begin_layout Standard
+U svetlu svega onoga što je dosad rečeno o kodiranjima, treba imati u vidu
+ da je string za koji ne znamo kako je kodiran u suštini beskoristan.
+ Više se ne možemo pretvarati da je to samo običan ASCII kod.
+ Da bi se neki string pravilno protumačio i prikazao, neophodno je znati
+ kako je kodiran: ako programer ne zna da li je korišćeno kodiranje UTF-8,
+ ASCII ili ISO 8859-1, nije u stanju da ispravno prikaže string niti da
+ zaključi gde se završava.
+ 
+\end_layout
+
+\begin_layout Standard
+Postoje standardni načini za čuvanje informacije o kodiranju određenog stringa.
+ Na primer, u zaglavljima e-poruka treba da se nađe string: 
+\end_layout
+
+\begin_layout Standard
+Content-Type: text/plain; charset="UTF-8"
+\end_layout
+
+\begin_layout Standard
+Na Web stranama to je meta tag:
+\end_layout
+
+\begin_layout Standard
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+\end_layout
+
+\begin_layout Standard
+Ovaj tag treba da bude prvi u odeljku <head> jer čim čitač Weba naiđe na
+ njega, prestaje da tumači stranu i započinje ponovo da je parsira koristeći
+ naznačeno kodiranje.
+ Ako ne naiđe na oznaku Content-Type, čitač Weba pokušava da 
+\begin_inset Quotes eld
+\end_inset
+
+pogodi
+\begin_inset Quotes erd
+\end_inset
+
+ kodiranje strane u zavisnosti od učestanosti pojavljivanja određenih bajtova
+ u tipičnom tekstu u uobičajenim kodiranjima različitih jezika.
+ Ovaj pristup je toliko uspešan da čak i strane za koje nije naveden tag
+ content-type obično izgledaju sasvim dobro.
+\end_layout
+
+\begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Locale"
+
+\end_inset
+
+Lokalne oznake (lokaliteti)
+\end_layout
+
+\begin_layout Standard
+Da bi se neka aplikacija zaista prilagodila za međunarodno tržište, nije
+ dovoljno prevesti samo natpise u korisničkom interfejsu; postoje mnoge
+ druge razlike, npr.
+ u formatiranju brojeva ili datuma.
+ Na primer, broj u engleskom prikazu 123,456.78 u nemačkom jeziku se formatira
+ kao 123.456,78, tj.
+ decimalni zarez i tačka u ova dva jezika imaju obrnuto značenje.
+ Isti je slučaj i sa datumima; npr.
+ englesko formatiranje datuma 3/22/61 na nemačkom je 22.03.1961.
+ Ponekad se čak dešava da je u dve zemlje u kojima se govori istim jezikom
+ (npr.
+ SAD i Velika Britanija) potrebno načiniti izvesne izmene u prikazu da bi
+ korisnici iz obe zemlje bili zadovoljni.
+\end_layout
+
+\begin_layout Standard
+Za kontrolu formatiranja koristi se klasa 
+\family typewriter
+java.util.Locale
+\family default
+.
+ Ona opisuje: 
+\end_layout
+
+\begin_layout Itemize
+jezik 
+\end_layout
+
+\begin_layout Itemize
+lokaciju (opciono) 
+\end_layout
+
+\begin_layout Itemize
+jezičku varijantu (opciono) 
+\end_layout
+
+\begin_layout Standard
+Na primer, za SAD treba koristiti lokalitet sa podešavanjima:
+\end_layout
+
+\begin_layout Standard
+language=English, location=US
+\end_layout
+
+\begin_layout Standard
+U Nemačkoj se koristi lokalitet sa vrednostima:
+\end_layout
+
+\begin_layout Standard
+language=German, location=GERMANY
+\end_layout
+
+\begin_layout Standard
+Švajcarska ima četiri zvanična jezika (nemački, francuski, italijanski i
+ retoromanski).
+ Švajcarac iz nemačkog govornog područja bi koristio:
+\end_layout
+
+\begin_layout Standard
+language=German, location=SWITZERLAND
+\end_layout
+
+\begin_layout Standard
+Ovaj lokalitet priprema ispis na isti način kao nemački, ali se valuta ispisuje
+ u švajcarskim francima, a ne u evrima.
+ Ako se navede samo jezik, na primer:
+\end_layout
+
+\begin_layout Standard
+language=German
+\end_layout
+
+\begin_layout Standard
+onda lokalitet ne registruje razlike u valutama zemalja.
+ Java koristi kodove jezika i mesta koje je definisala Međunarodna organizacija
+ za standardizaciju; jezik se izražava kodom od dva mala slova, a kod zemlje
+ sa dva velika slova.
+ Potpuna lista kodova jezika nalazi se na adresi http://www.loc.gov/standards/iso6
+39-2/php/code_list.php, a lista kodova država na adresi
+\end_layout
+
+\begin_layout Standard
+http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm.
+ 
+\end_layout
+
+\begin_layout Standard
+Da bi se definisao lokalitet, u konstruktoru klase 
+\family typewriter
+Locale
+\family default
+ zadaju se jezik, kod zemlje i varijanta jezika (ako postoji):
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale nemacki = new Locale(“de”); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale nemackiNemacki = new Locale(“de”, “DE”); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale svajcarskiNemacki = new Locale(“de”, “CH”); 
+\end_layout
+
+\begin_layout Standard
+Java nudi brojne predefinisane objekte lokaliteta, npr.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.CHINA 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.GERMANY 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.UK 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.US
+\end_layout
+
+\begin_layout Standard
+Na raspolaganju su i predefinisani objekti lokaliteta koji određuju jezik
+ bez obzira na lokaciju: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.ENGLISH
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.GERMAN 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale.SIMPLIFIED_CHINESE
+\end_layout
+
+\begin_layout Standard
+Osim konstruisanja novog objekta 
+\family typewriter
+Locale
+\family default
+ ili korišćenja nekog predefinisanog, postoje još dva načina za dobijanje
+ objekta lokaliteta.
+ Statički metod 
+\family typewriter
+Locale.getDefault()
+\family default
+ vraća podrazumevanu vrednost lokaliteta u zavisnosti od podešavanja operativnog
+ sistema.
+ Pozivom metode 
+\family typewriter
+Locale.setDefault()
+\family default
+ ta vrednost se može izmeniti, ali se promena odražava samo na program,
+ a ne i na operativni sistem.
+ Takođe, svi alati koji zavise od lokaliteta mogu da vrate niz lokaliteta
+ koji podržavaju, npr.
+ sledeća funcija vraća sve lokalitete koje klasa 
+\family typewriter
+DateFormat
+\family default
+ podržava:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale[] podrzaniLokaliteti = DateFormat.getAvailableLocales(); 
+\end_layout
+
+\begin_layout Standard
+Objekat klase 
+\family typewriter
+Locale
+\family default
+ sam po sebi nije naročito koristan, ali služi za prosleđivanje metodama
+ koje rade sa tekstom koji se prikazuje korisnicima na različitim mestima,
+ kao što ćemo videti u narednim primerima.
+ 
+\end_layout
+
+\begin_layout Subsection
+Kodiranje znakova i Java
+\end_layout
+
+\begin_layout Standard
+Često se dešava da operativni sistemi i čitači ne podržavaju Unicode.
+ Zato postoji sloj za prevođenje skupa znakova i fontova između računara
+ i Javine virtuelne mašine koja radi na njoj.
+ Primitivni tip u 
+\family typewriter
+char
+\family default
+ u Javi koristi big-endian UTF-16 kodiranje za predstavljanje kodnih tačaka
+ iz opsega U+0000 do U+FFFF.
+ Svaka instanca Javine virtuelne mašine koristi podrazumevano kodiranje
+ znakova koje se određuje tokom njenog pokretanja, a zavisi od lokaliteta
+ i kodiranja operativnog sistema na kome se virtuelna mašina izvršava.
+ Trenutno u Javi nema nikakve veze između lokaliteta, tj.
+ klase 
+\family typewriter
+Locale
+\family default
+ i kodiranja znakova (npr.
+ ako se odabere kineski lokalitet, ne postoji Javin metod koji će reći da
+ treba da se upotrebi kodiranje Big5).
+\end_layout
+
+\begin_layout Standard
+Java nudi skup filtara za tokove koji premošćuju jaz između Unicode teksta
+ i kodiranja koje koristi lokalni operativni sistem.
+ Sve te klase izvedene su iz apstraktnih klasa 
+\family typewriter
+Reader
+\family default
+ i 
+\family typewriter
+Writer
+\family default
+; na primer, klasa 
+\family typewriter
+InputStreamReader
+\family default
+ pretvara ulazni tok sa bajtovima u određenom kodiranju u čitač sa Unicode
+ znakovima.
+ Slično, klasa 
+\family typewriter
+OutputStreamWriter
+\family default
+ pretvara niz Unicode znakova u tok bajtova određenog kodiranja.
+ Podrazumevana vrednost kodiranja u Windowsu je ISO 8859-1 (ANSI), ali se
+ različito kodiranje može zadati u konstruktoru, npr.
+ 
+\end_layout
+
+\begin_layout Verse
+
+\family typewriter
+InputStreamReader in = new InputStreamReader(
+\end_layout
+
+\begin_deeper
+\begin_layout Verse
+
+\family typewriter
+new FileInputStream("file.dat"), "UTF8");
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Na isti način, kada se podaci smeštaju u tekstualnu datoteku, treba uzeti
+ u obzir lokalno kodiranje znakova tako da korisnici mogu da je otvore u
+ svojim aplikacijama.
+ U konstruktoru klase 
+\family typewriter
+FileWriter
+\family default
+ treba navesti zapis u željenom kodu:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+out = new FileWriter(filename, "ISO-8859-1"); 
+\end_layout
+
+\begin_layout Standard
+Spisak svih šema kodiranja koje Java podržava može se pronaći na adresi
+ http://docs.oracle.com/javase/1.3/docs/guide/intl/encoding.doc.html
+\end_layout
+
+\begin_layout Subsection
+Lokalizacija brojeva i valuta
+\end_layout
+
+\begin_layout Standard
+Način na koji se formatiraju decimalni brojevi, tj.
+ njihova lokalizacija zavisi od zemlje i jezika.
+ Javin paket 
+\family typewriter
+java.text
+\family default
+ sadrži klase koje obrađuju brojne vrednosti.
+ Da bi se za određeni lokalitet pripremili brojevi za ispis, potrebno je
+ izvršiti sledeće korake:
+\end_layout
+
+\begin_layout Standard
+1.
+ doći do objekta lokaliteta, na neki od načina opisanih u odeljku 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Locale"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+2.
+ upotrebiti metode faktorisanja klase 
+\family typewriter
+NumberFormat
+\family default
+ da bi se dobio objekat za formatiranje 
+\end_layout
+
+\begin_layout Standard
+3.
+ iskoristiti taj objekat za prikaz i obradu brojnih vrednosti
+\end_layout
+
+\begin_layout Standard
+Metode faktorisanja su tri statičke metode klase 
+\family typewriter
+NumberFormat
+\family default
+ sa argumentom 
+\family typewriter
+Locale
+\family default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Postoje i verzije metoda bez argumenta; one rade sa podrazumevanim lokalitetom.
+\end_layout
+
+\end_inset
+
+: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat.getNumberInstance(Locale)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat.getCurrencyInstance(Locale)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat.getPercentInstance(Locale)
+\end_layout
+
+\begin_layout Standard
+Ove metode vraćaju objekte tipa 
+\family typewriter
+NumberFormat
+\family default
+ koji mogu da formatiraju brojeve, valutu i procente, redom.
+ Sledeći primer ilustruje ispis nemačke valute:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Locale lok = new Locale(“de”, “DE”); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat valuta = NumberFormat.getCurrencyInstance(lok); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Double iznos = 123456.78; 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+System.out.println(valuta.format(iznos)); //ispisuje 123.456,78 DM
+\family default
+ 
+\end_layout
+
+\begin_layout Standard
+Da bi se učitao broj zadat ili unet korišćenjem određenog lokaliteta, koriste
+ se metode za obradu klase 
+\family typewriter
+NumberFormat
+\family default
+.
+ Sledeći primeru ilustruje kako se lokalizuje brojna vrednost koju korisnik
+ unosi u grafičkom interfejsu, preko polja za tekst, a uz oslanjanje na
+ podrazumevani lokalitet:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+TextField inputField; 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat format = NumberFormat.getNumberInstance(); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Number input = format.parse(inputField.getText().trim()); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+double x = input.doubleValue();
+\end_layout
+
+\begin_layout Standard
+Povratni tip metode 
+\family typewriter
+parse()
+\family default
+ je apstraktna klasa 
+\family typewriter
+Number
+\family default
+; da bi se od nje stiglo do prostog tipa 
+\family typewriter
+double
+\family default
+, treba upotrebiti metod 
+\family typewriter
+doubleValue()
+\family default
+.
+ Ako tekst iz koga se parsira broj nije u odgovarajućem formatu, npr.
+ na početku sadrži razmake, metod 
+\family typewriter
+parse()
+\family default
+ baca izuzetak tipa 
+\family typewriter
+ParseException
+\family default
+.
+ Da bi se to izbeglo, treba pozvati metod 
+\family typewriter
+trim()
+\family default
+ za stringove.
+ Znakovi koji slede iza broja u stringu se zanemaruju i u tom slučaju nema
+ izuzetka.
+\end_layout
+
+\begin_layout Standard
+Za formatiranje vrednosti valute može da se koristi statički metod 
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+NumberFormat.getCurrencyInstance()
+\family default
+.
+ Međutim, taj metod je prilično nefleksibilan, jer vraća formater za samo
+ jednu valutu.
+ Pretpostavimo da pripremate izveštaj u kome neki iznosi treba da budu prikazani
+ u dolarima, a drugi u evrima.
+ Kada biste koristili dva formatera:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat dollarFormatter = NumberFormat.getCurrencyInstance(Locale.US);
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat euroFormatter = NumberFormat.getCurrencyInstance(Locale.GERMANY);
+ 
+\end_layout
+
+\begin_layout Standard
+izveštaj bi izgledao čudno jer bi neke vrednosti bile prikazane kao $100,000
+ a druge kao 100.000€ (obratite pažnju da evro koristi decimalnu tačku, a
+ ne zarez, i da se pojavljuje iza cifre).
+ Za takve slučajeve bolje je koristiti statički metod 
+\family typewriter
+Currency.getInstance()
+\family default
+, kao u sledećem primeru:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+NumberFormat.euroFormatter = NumberFormat.getCurrencyInstance(Locale.US); 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+euroFormatter.setCurrency(Currency.getInstance(“EUR”)); 
+\end_layout
+
+\begin_layout Standard
+Identifikatori valuta su definisani standardom ISO 4217.
+ 
+\end_layout
+
+\begin_layout Subsection
+Lokalizacija datuma i vremena
+\end_layout
+
+\begin_layout Standard
+Format prikaza datuma i vremena razlikuje se od jezika do jezika.
+ Osim redosleda dana, meseca i godine, treba voditi računa i o prikazu meseca
+ u odgovarajućem jeziku i o vremenskim zonama.
+ Način na koji se ovo radi veoma je sličan korišćenju klase 
+\family typewriter
+NumberFormat
+\family default
+ u sprezi sa objektom 
+\family typewriter
+Locale
+\family default
+ što je opisano u prethodnom odeljku, samo što se u ovom slučaju koristi
+ klasa 
+\family typewriter
+DateFormat
+\family default
+.
+ Dakle, prvo je potrebno dobiti instancu lokaliteta, koja se zatim prosleđuje
+ metodama faktorisanja klase 
+\family typewriter
+DateFormat
+\family default
+:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.getDateInstance(dateStyle, locale)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.getTimeInstance(timeStyle, locale)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.getDateTimeInstance(dateStyle, timeStyle, locale)
+\end_layout
+
+\begin_layout Standard
+Sve metode imaju parametar stila koji može biti jedna od sledećih konstanti:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.DEFAULT
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.FULL
+\family default
+ (Wednesday, September 15, 2004 8:51:03 PM PDT za US lokalitet)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.LONG
+\family default
+ (September 15, 2004 8:51:03 PM PDT za US lokalitet)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.MEDIUM
+\family default
+ (Sep 15, 2004 8:51:03 PM za US lokalitet)
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat.SHORT
+\family default
+ (9/15/04 8:51 PM za US lokalitet)
+\end_layout
+
+\begin_layout Standard
+Da bi se datum formatirao za trenutni lokalitet, može se upotrebiti statički
+ metod:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+String datum = DateFormat.getDateInstance().format(myDate); 
+\end_layout
+
+\begin_layout Standard
+Da bi se datum formatirao za različit lokalitet, on se zadaje u pozivu metode
+ 
+\family typewriter
+getDateInstance()
+\family default
+:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+DateFormat df = DateFormat.getDateInstance(DateFormat.LONG, Locale.FRANCE);
+ 
+\end_layout
+
+\begin_layout Standard
+Klasa 
+\family typewriter
+DateFormat
+\family default
+ može se koristiti i za parsiranje datuma iz stringa:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Date datum = df.parse(mojString);
+\end_layout
+
+\begin_layout Subsection
+Internacionalizacija teksta
+\end_layout
+
+\begin_layout Standard
+U svakoj aplikaciji koja se internacionalizuje postojaće veliki broj poruka,
+ dugmadi i sl.
+ čije natpise treba prevesti na različite jezike.
+ Da bi se to obavilo na najbolji način, potrebno je definisati stringove
+ poruka na spoljašnjim lokacijama koje se zovu resursi.
+ Na taj način poruke će moći da se prevode bez menjanja izvornog koda aplikacije.
+ 
+\end_layout
+
+\begin_layout Standard
+U Javi treba koristiti datoteke svojstava (tj.
+ datoteke sa ekstenzijom .properties) u koje se smeštaju stringovi i odgovarajući
+ prevodi.
+ Svi natpisi koje treba internacionalizovati smeštaju se u datoteku svojstava,
+ npr.
+ 
+\shape italic
+stringovi.properties
+\shape default
+.
+ To je jednostavna tekstualna datoteka sa po jednim parom ključ/vrednost
+ po redu.
+ 
+\end_layout
+
+\begin_layout Standard
+Lokalizacija počinje kreiranjem skupa resursa (resource bundle).
+ Svaki skup se sastoji od datoteke svojstava (property file) koja opisuje
+ lokalizovane stavke (poruke, natpise i sl).
+ Potrebno je obezbediti verzije za sve lokale koje treba podržati.
+ Prilikom kreiranja resursa koristi se specijalno imenovanje.
+ Na primer, resursi određeni za Italiju trebalo bi da se nađu u datoteci
+ 
+\shape italic
+stringovi_it_IT
+\shape default
+, dok se oni za sve zemlje u kojima se govori italijanski (npr.
+ za Švajcarsku) smeštaju u datoteku 
+\shape italic
+stringovi_it
+\shape default
+.
+ Po pravilu se koristi šema imenovanja 
+\shape italic
+imeDatoteke_jezik_zemlja
+\shape default
+ za sve resurse specifične za zemlju, odnosno 
+\shape italic
+imeDatoteke_jezik
+\shape default
+ za sve resurse specifične za jezik.
+ 
+\end_layout
+
+\begin_layout Standard
+Skup resursa učitava se naredbom:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+ResourceBundle tekuciResursi = ResourceBundle.getBundle(imeDatoteke, lokalitet);
+\end_layout
+
+\begin_layout Standard
+Metod 
+\family typewriter
+getBundle()
+\family default
+ pokušava da učita resurs koji odgovara tekućem lokalitetu po jeziku, zemlji
+ i varijanti jezika.
+ Ako u tome ne uspe, iz pretrage izbacuje varijantu jezika, zemlju, i na
+ kraju jezik.
+ Isti princip se primenjuje i u traženju podrazumevanog lokaliteta; ako
+ pretraga ne nađe ništa, konsultuje se podrazumevana datoteka sa resursima.
+ Ako se ni ona ne nađe, metod baca izuzetak 
+\family typewriter
+MissingResourceException
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Kada metod 
+\family typewriter
+getBundle()
+\family default
+ pronađe resurs, recimo, 
+\shape italic
+imeDatoteke_it_IT
+\shape default
+, i dalje će nastaviti da traži 
+\shape italic
+imeDatoteke_it
+\shape default
+ i 
+\shape italic
+imeDatoteke
+\shape default
+.
+ Ako ti resursi postoje, oni će postati roditeljski resursi za 
+\shape italic
+imeDatoteke_it_IT
+\shape default
+ u hijerarhiji resursa.
+ Kasnije, prilikom traženja resursa, roditelji će se tražiti ako pretraga
+ tekućeg resursa ne uspe.
+ Odnosno, ako se određeni resurs ne nađe u 
+\shape italic
+imeDatoteke_it_IT
+\shape default
+, onda će se tražiti i u resursima 
+\shape italic
+imeDatoteke_it
+\shape default
+ i 
+\shape italic
+imeDatoteke
+\shape default
+.
+\end_layout
+
+\begin_layout Standard
+Tipična datoteka svojstava za meni u italijanskom lokalitetu, tj.
+ datoteka 
+\shape italic
+menu_it.properties
+\shape default
+ mogla bi da izgleda ovako:
+\end_layout
+
+\begin_layout Standard
+fileMenu=File 
+\end_layout
+
+\begin_layout Standard
+editMenu=Modifica
+\end_layout
+
+\begin_layout Standard
+viewMenu=Visualizza
+\end_layout
+
+\begin_layout Standard
+toolsMenu=Strumenti
+\end_layout
+
+\begin_layout Standard
+helpMenu=Aiuto
+\end_layout
+
+\begin_layout Standard
+Zatim se datoteka svojstava imenuje na način opisan u prethodnom odeljku,
+ npr.
+ 
+\shape italic
+menu.properties
+\shape default
+, 
+\shape italic
+menu_it.properties
+\shape default
+, 
+\shape italic
+menu_it_CH.properties
+\shape default
+.
+ Resurs se učitava naredbom
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+ResourceBundle bundle = ResourceBundle.getBundle("menu", lokalitet);
+\end_layout
+
+\begin_layout Standard
+Određeni string se pronalazi pomoću naredbe:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+String viewMenuLabel = bundle.getString("viewMenu");
+\end_layout
+
+\begin_layout Standard
+U mnoga razvojna okruženja za Javu ugrađen je mehanizam za internacionalizaciju;
+ na primer, uputstvo za NetBeans IDE se nalazi na adresi
+\begin_inset Newline newline
+\end_inset
+
+ http://netbeans.org/kb/docs/java/gui-automatic-i18n.html.
+\end_layout
+
+\end_body
+\end_document
